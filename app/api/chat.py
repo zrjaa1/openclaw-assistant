@@ -1,0 +1,115 @@
+import json
+
+from fastapi import APIRouter, Header, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from app.api.auth import verify_token
+from app.db.database import Conversation, Message, SessionLocal
+from app.services import dify_service, quota_service
+
+router = APIRouter()
+
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation_id: int | None = None
+
+
+@router.post("/api/chat")
+async def chat(req: ChatRequest, authorization: str = Header(...)):
+    token = authorization.removeprefix("Bearer ").strip()
+    user_id = verify_token(token)
+
+    db = SessionLocal()
+    try:
+        # Check quota
+        if not quota_service.check_and_deduct(db, user_id):
+            raise HTTPException(
+                status_code=403,
+                detail="对话次数已用完，请充值后继续使用。",
+            )
+
+        # Get or create conversation
+        if req.conversation_id:
+            conv = db.query(Conversation).filter(
+                Conversation.id == req.conversation_id,
+                Conversation.user_id == user_id,
+            ).first()
+            if not conv:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            dify_conv_id = conv.dify_conversation_id
+        else:
+            conv = Conversation(user_id=user_id)
+            db.add(conv)
+            db.commit()
+            db.refresh(conv)
+            dify_conv_id = ""
+
+        # Save user message
+        user_msg = Message(
+            conversation_id=conv.id,
+            role="user",
+            content=req.message,
+        )
+        db.add(user_msg)
+        db.commit()
+
+        conv_id_local = conv.id
+    finally:
+        db.close()
+
+    async def event_stream():
+        full_answer = ""
+        new_dify_conv_id = ""
+
+        try:
+            async for event in dify_service.send_message_stream(
+                query=req.message,
+                user_id=str(user_id),
+                conversation_id=dify_conv_id,
+            ):
+                event_type = event.get("event", "")
+
+                if event_type == "message":
+                    chunk = event.get("answer", "")
+                    full_answer += chunk
+                    yield f"data: {json.dumps({'type': 'message', 'content': chunk}, ensure_ascii=False)}\n\n"
+
+                elif event_type == "message_end":
+                    new_dify_conv_id = event.get("conversation_id", "")
+                    yield f"data: {json.dumps({'type': 'done', 'conversation_id': conv_id_local}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'content': str(e)}, ensure_ascii=False)}\n\n"
+            return
+
+        # Save assistant message and update conversation
+        save_db = SessionLocal()
+        try:
+            assistant_msg = Message(
+                conversation_id=conv_id_local,
+                role="assistant",
+                content=full_answer,
+            )
+            save_db.add(assistant_msg)
+
+            if new_dify_conv_id:
+                conv_obj = save_db.query(Conversation).filter(
+                    Conversation.id == conv_id_local
+                ).first()
+                if conv_obj:
+                    conv_obj.dify_conversation_id = new_dify_conv_id
+
+            save_db.commit()
+        finally:
+            save_db.close()
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )

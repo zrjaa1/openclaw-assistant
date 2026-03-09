@@ -1,0 +1,71 @@
+<view class="container">
+  <!-- Message List -->
+  <scroll-view
+    class="message-list"
+    scroll-y="true"
+    scroll-into-view="{{scrollToId}}"
+    enhanced="true"
+    show-scrollbar="false"
+  >
+    <!-- Welcome message -->
+    <view class="message assistant" wx:if="{{messages.length === 0}}">
+      <view class="avatar">🦞</view>
+      <view class="bubble">
+        <text>你好！我是 OpenClaw 安装助手。\n\n我可以一步步指导你在 Windows 上安装和配置 OpenClaw。\n\n直接告诉我你的需求，比如"我想在 Windows 上安装 OpenClaw"就可以开始了！</text>
+      </view>
+    </view>
+
+    <view
+      wx:for="{{messages}}"
+      wx:key="id"
+      class="message {{item.role}}"
+      id="msg-{{item.id}}"
+    >
+      <view class="avatar" wx:if="{{item.role === 'assistant'}}">🦞</view>
+      <view class="bubble">
+        <rich-text nodes="{{item.rendered || item.content}}"></rich-text>
+        <!-- Copy button for code blocks -->
+        <view
+          class="copy-btn"
+          wx:if="{{item.role === 'assistant' && item.hasCode}}"
+          bindtap="onCopyCode"
+          data-content="{{item.codeContent}}"
+        >
+          <text>复制命令</text>
+        </view>
+      </view>
+      <view class="avatar" wx:if="{{item.role === 'user'}}">👤</view>
+    </view>
+
+    <!-- Typing indicator -->
+    <view class="message assistant" wx:if="{{isTyping}}">
+      <view class="avatar">🦞</view>
+      <view class="bubble typing">
+        <text>{{currentResponse || '思考中...'}}</text>
+      </view>
+    </view>
+
+    <view id="bottom-anchor" style="height: 20rpx;"></view>
+  </scroll-view>
+
+  <!-- Quota warning -->
+  <view class="quota-bar" wx:if="{{remainingQuota <= 5 && remainingQuota >= 0}}">
+    <text>剩余对话次数: {{remainingQuota}}</text>
+  </view>
+
+  <!-- Input Area -->
+  <view class="input-area">
+    <input
+      class="input-box"
+      value="{{inputText}}"
+      placeholder="输入你的问题..."
+      confirm-type="send"
+      bindinput="onInput"
+      bindconfirm="onSend"
+      disabled="{{isTyping}}"
+    />
+    <button class="send-btn" bindtap="onSend" disabled="{{isTyping || !inputText}}">
+      发送
+    </button>
+  </view>
+</view>
