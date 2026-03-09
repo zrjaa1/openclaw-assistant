@@ -101,4 +101,31 @@ function getQuota(callback) {
   });
 }
 
-module.exports = { sendMessage, getQuota };
+/**
+ * Load the user's latest conversation with message history.
+ */
+function getLatestConversation(callback) {
+  wx.cloud.callContainer({
+    config: {
+      env: app.globalData.cloudEnv,
+    },
+    path: '/api/conversation/latest',
+    method: 'GET',
+    header: {
+      'X-WX-SERVICE': app.globalData.serviceName,
+      'Authorization': `Bearer ${app.globalData.token}`,
+    },
+    success(res) {
+      if (res.statusCode === 200) {
+        callback(null, res.data);
+      } else {
+        callback('加载对话失败');
+      }
+    },
+    fail() {
+      callback('网络请求失败');
+    },
+  });
+}
+
+module.exports = { sendMessage, getQuota, getLatestConversation };
