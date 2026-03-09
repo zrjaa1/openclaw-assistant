@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
@@ -7,6 +8,8 @@ from pydantic import BaseModel
 from app.api.auth import verify_token
 from app.db.database import Conversation, Message, SessionLocal
 from app.services import dify_service, quota_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -102,7 +105,6 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
 
     async def event_stream():
         full_answer = ""
-        new_dify_conv_id = ""
 
         try:
             async for event in dify_service.send_message_stream(
@@ -119,32 +121,43 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
 
                 elif event_type == "message_end":
                     new_dify_conv_id = event.get("conversation_id", "")
+                    logger.info(
+                        "message_end: local_conv=%s, dify_conv=%s",
+                        conv_id_local, new_dify_conv_id,
+                    )
+
+                    # Save BEFORE yielding done — once we yield,
+                    # the cloud proxy may close the connection and
+                    # the generator cleanup code won't run.
+                    save_db = SessionLocal()
+                    try:
+                        assistant_msg = Message(
+                            conversation_id=conv_id_local,
+                            role="assistant",
+                            content=full_answer,
+                        )
+                        save_db.add(assistant_msg)
+
+                        if new_dify_conv_id:
+                            conv_obj = save_db.query(Conversation).filter(
+                                Conversation.id == conv_id_local
+                            ).first()
+                            if conv_obj:
+                                conv_obj.dify_conversation_id = new_dify_conv_id
+                                logger.info(
+                                    "Saved dify_conversation_id=%s for conv=%s",
+                                    new_dify_conv_id, conv_id_local,
+                                )
+
+                        save_db.commit()
+                    finally:
+                        save_db.close()
+
                     yield f"data: {json.dumps({'type': 'done', 'conversation_id': conv_id_local}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
+            logger.exception("Error in chat stream")
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)}, ensure_ascii=False)}\n\n"
-            return
-
-        # Save assistant message and update conversation
-        save_db = SessionLocal()
-        try:
-            assistant_msg = Message(
-                conversation_id=conv_id_local,
-                role="assistant",
-                content=full_answer,
-            )
-            save_db.add(assistant_msg)
-
-            if new_dify_conv_id:
-                conv_obj = save_db.query(Conversation).filter(
-                    Conversation.id == conv_id_local
-                ).first()
-                if conv_obj:
-                    conv_obj.dify_conversation_id = new_dify_conv_id
-
-            save_db.commit()
-        finally:
-            save_db.close()
 
     return StreamingResponse(
         event_stream(),
