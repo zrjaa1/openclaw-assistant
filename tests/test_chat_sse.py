@@ -17,13 +17,15 @@ from app.api.auth import create_token
 # ---------------------------------------------------------------------------
 
 async def fake_dify_stream(query, user_id, conversation_id=""):
-    """Simulate Dify SSE events: several message chunks + message_end."""
+    """Simulate Dify workflow SSE events: message chunks + workflow_finished."""
+    yield {"event": "workflow_started", "conversation_id": "dify-conv-abc123"}
+    await asyncio.sleep(0)
     chunks = ["Hello", ", this is ", "a test reply."]
     for chunk in chunks:
-        yield {"event": "message", "answer": chunk}
-        await asyncio.sleep(0)  # let the event loop tick
+        yield {"event": "message", "answer": chunk, "conversation_id": "dify-conv-abc123"}
+        await asyncio.sleep(0)
     yield {
-        "event": "message_end",
+        "event": "workflow_finished",
         "conversation_id": "dify-conv-abc123",
     }
 
