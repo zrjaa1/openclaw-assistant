@@ -23,7 +23,7 @@ async def code_to_session(code: str) -> dict:
         "js_code": code,
         "grant_type": "authorization_code",
     }
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, verify=False) as client:
         resp = await client.get(WECHAT_CODE2SESSION_URL, params=params)
         resp.raise_for_status()
         data = resp.json()

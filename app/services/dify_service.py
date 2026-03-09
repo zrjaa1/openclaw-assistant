@@ -31,7 +31,7 @@ async def send_message_stream(
     if conversation_id:
         payload["conversation_id"] = conversation_id
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
         async with client.stream("POST", url, json=payload, headers=headers) as resp:
             resp.raise_for_status()
             buffer = ""
@@ -75,7 +75,7 @@ async def send_message(
     if conversation_id:
         payload["conversation_id"] = conversation_id
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
         resp = await client.post(url, json=payload, headers=headers)
         resp.raise_for_status()
         return resp.json()
