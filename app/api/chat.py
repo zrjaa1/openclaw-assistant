@@ -105,6 +105,7 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
 
     async def event_stream():
         full_answer = ""
+        dify_conv_id_from_stream = ""
 
         try:
             async for event in dify_service.send_message_stream(
@@ -114,16 +115,20 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
             ):
                 event_type = event.get("event", "")
 
+                # Capture conversation_id from any event that has it
+                if event.get("conversation_id"):
+                    dify_conv_id_from_stream = event["conversation_id"]
+
                 if event_type == "message":
                     chunk = event.get("answer", "")
-                    full_answer += chunk
-                    yield f"data: {json.dumps({'type': 'message', 'content': chunk}, ensure_ascii=False)}\n\n"
+                    if chunk:
+                        full_answer += chunk
+                        yield f"data: {json.dumps({'type': 'message', 'content': chunk}, ensure_ascii=False)}\n\n"
 
-                elif event_type == "message_end":
-                    new_dify_conv_id = event.get("conversation_id", "")
+                elif event_type in ("message_end", "workflow_finished"):
                     logger.info(
-                        "message_end: local_conv=%s, dify_conv=%s",
-                        conv_id_local, new_dify_conv_id,
+                        "%s: local_conv=%s, dify_conv=%s",
+                        event_type, conv_id_local, dify_conv_id_from_stream,
                     )
 
                     # Save BEFORE yielding done — once we yield,
@@ -138,16 +143,12 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
                         )
                         save_db.add(assistant_msg)
 
-                        if new_dify_conv_id:
+                        if dify_conv_id_from_stream:
                             conv_obj = save_db.query(Conversation).filter(
                                 Conversation.id == conv_id_local
                             ).first()
                             if conv_obj:
-                                conv_obj.dify_conversation_id = new_dify_conv_id
-                                logger.info(
-                                    "Saved dify_conversation_id=%s for conv=%s",
-                                    new_dify_conv_id, conv_id_local,
-                                )
+                                conv_obj.dify_conversation_id = dify_conv_id_from_stream
 
                         save_db.commit()
                     finally:
