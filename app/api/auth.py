@@ -85,6 +85,36 @@ async def debug_conversations():
         db.close()
 
 
+@router.get("/api/debug/dify-test")
+async def debug_dify_test():
+    """Send a test message to Dify and return raw SSE events."""
+    import httpx
+    from app.config import settings
+
+    url = f"{settings.dify_base_url}/chat-messages"
+    headers = {
+        "Authorization": f"Bearer {settings.dify_api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "inputs": {},
+        "query": "Hi",
+        "response_mode": "streaming",
+        "user": "debug-test",
+    }
+
+    raw_lines = []
+    async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
+        async with client.stream("POST", url, json=payload, headers=headers) as resp:
+            async for chunk in resp.aiter_text():
+                for line in chunk.split("\n"):
+                    stripped = line.strip()
+                    if stripped:
+                        raw_lines.append(stripped)
+
+    return {"raw_lines": raw_lines}
+
+
 @router.post("/api/login", response_model=LoginResponse)
 async def login(req: LoginRequest):
     from app.services.wechat_service import code_to_session
