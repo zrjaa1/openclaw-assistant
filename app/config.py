@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # Quota
     default_free_quota: int = 20
+    exempt_openids: str = ""  # comma-separated openids that bypass quota
 
     model_config = {"env_file": ".env"}
 
