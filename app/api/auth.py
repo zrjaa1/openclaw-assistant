@@ -46,8 +46,12 @@ async def login(req: LoginRequest):
         wx_data = await code_to_session(req.code)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"WeChat API error: {e}")
 
-    openid = wx_data["openid"]
+    openid = wx_data.get("openid")
+    if not openid:
+        raise HTTPException(status_code=502, detail=f"WeChat returned no openid: {wx_data}")
 
     db = SessionLocal()
     try:
