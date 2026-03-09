@@ -46,6 +46,13 @@ async def send_message_stream(
                             yield json.loads(data_str)
                         except json.JSONDecodeError:
                             continue
+            # Process any remaining data in buffer after stream ends
+            buffer = buffer.strip()
+            if buffer.startswith("data: "):
+                try:
+                    yield json.loads(buffer[6:])
+                except json.JSONDecodeError:
+                    pass
 
 
 async def send_message(
