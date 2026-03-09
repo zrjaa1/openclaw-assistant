@@ -10,30 +10,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.api.auth import create_token
-from app.db.database import Base, SessionLocal, User, engine
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-@pytest.fixture(autouse=True)
-def setup_db():
-    """Create a fresh in-memory DB for each test."""
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    # Seed a test user
-    user = User(openid="test-openid", free_quota=10)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    db.close()
-    yield
-    Base.metadata.drop_all(bind=engine)
-
-
-def _make_token(user_id: int = 1) -> str:
-    return create_token(user_id)
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +55,7 @@ async def test_first_message_returns_done_event(mock_dify):
     """First chat message should return message chunks + a done event."""
     from app.main import app
 
-    token = _make_token()
+    token = create_token(1)
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -114,7 +90,7 @@ async def test_second_message_works(mock_dify):
     conversation should succeed and also return a done event."""
     from app.main import app
 
-    token = _make_token()
+    token = create_token(1)
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -159,7 +135,7 @@ async def test_sse_format_has_proper_newlines(mock_dify):
     so the frontend can split and parse them correctly."""
     from app.main import app
 
-    token = _make_token()
+    token = create_token(1)
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
