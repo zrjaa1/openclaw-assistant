@@ -9,18 +9,26 @@ const app = getApp();
  * @param {function} onError - Called on error
  */
 function sendMessage(message, conversationId, onChunk, onDone, onError) {
-  const requestTask = wx.request({
-    url: `${app.globalData.baseUrl}/api/chat`,
+  let buffer = '';
+  let gotDone = false;
+
+  const requestTask = wx.cloud.callContainer({
+    config: {
+      env: app.globalData.cloudEnv,
+    },
+    path: '/api/chat',
     method: 'POST',
-    enableChunkedTransfer: true,
     header: {
+      'X-WX-SERVICE': app.globalData.serviceName,
       'Authorization': `Bearer ${app.globalData.token}`,
-      'Content-Type': 'application/json',
+      'content-type': 'application/json',
     },
     data: {
       message: message,
       conversation_id: conversationId,
     },
+    enableChunkedTransfer: true,
+    responseType: 'text',
     success(res) {
       if (res.statusCode === 403) {
         onError('对话次数已用完，请充值后继续使用。');
@@ -30,41 +38,64 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
         onError(res.data.detail || '请求失败');
         return;
       }
-      // Parse SSE data from response
-      const text = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-      const lines = text.split('\n');
-      let gotDone = false;
-      let lastConversationId = null;
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'message') {
-              onChunk(data.content);
-            } else if (data.type === 'done') {
-              gotDone = true;
-              lastConversationId = data.conversation_id;
-              onDone({ conversationId: data.conversation_id });
-            } else if (data.type === 'error') {
-              onError(data.content);
-              return;
-            }
-          } catch (e) {
-            // skip invalid JSON
-          }
-        }
+      // Process any remaining data in buffer
+      if (res.data) {
+        const text = typeof res.data === 'string' ? res.data : '';
+        processSSEBuffer(text);
       }
-
-      // Fallback: if we received data but no done event, still finalize
+      // Ensure we always finalize
       if (!gotDone) {
-        onDone({ conversationId: lastConversationId });
+        onDone({ conversationId: null });
       }
     },
     fail(err) {
-      onError('网络请求失败，请检查网络连接。');
+      if (!gotDone) {
+        onError('网络请求失败，请检查网络连接。');
+      }
     },
   });
+
+  function processSSEBuffer(text) {
+    buffer += text;
+    const parts = buffer.split('\n');
+    // Keep the last incomplete line in buffer
+    buffer = parts.pop() || '';
+
+    for (const line of parts) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(trimmed.slice(6));
+          if (data.type === 'message') {
+            onChunk(data.content);
+          } else if (data.type === 'done') {
+            gotDone = true;
+            onDone({ conversationId: data.conversation_id });
+          } else if (data.type === 'error') {
+            gotDone = true;
+            onError(data.content);
+          }
+        } catch (e) {
+          // skip invalid JSON
+        }
+      }
+    }
+  }
+
+  // Handle real-time chunks as they arrive
+  if (requestTask && requestTask.onChunkReceived) {
+    requestTask.onChunkReceived(function (res) {
+      if (res.data) {
+        let text;
+        if (res.data instanceof ArrayBuffer) {
+          text = String.fromCharCode.apply(null, new Uint8Array(res.data));
+        } else {
+          text = String(res.data);
+        }
+        processSSEBuffer(text);
+      }
+    });
+  }
 
   return requestTask;
 }
@@ -73,10 +104,14 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
  * Get remaining quota for current user.
  */
 function getQuota(callback) {
-  wx.request({
-    url: `${app.globalData.baseUrl}/api/quota`,
+  wx.cloud.callContainer({
+    config: {
+      env: app.globalData.cloudEnv,
+    },
+    path: '/api/quota',
     method: 'GET',
     header: {
+      'X-WX-SERVICE': app.globalData.serviceName,
       'Authorization': `Bearer ${app.globalData.token}`,
     },
     success(res) {

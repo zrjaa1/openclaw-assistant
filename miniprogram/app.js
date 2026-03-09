@@ -1,10 +1,14 @@
 App({
   globalData: {
     token: '',
-    baseUrl: 'https://your-server.com',  // TODO: 替换为你的后端地址
+    cloudEnv: 'openclaw-assistant-7ddog43bea1e1',
+    serviceName: 'openclaw-assistant',  // 云托管服务名称，请在控制台确认
   },
 
   onLaunch() {
+    wx.cloud.init({
+      env: this.globalData.cloudEnv,
+    });
     this.login();
   },
 
@@ -16,14 +20,20 @@ App({
           console.error('wx.login failed');
           return;
         }
-        wx.request({
-          url: `${that.globalData.baseUrl}/api/login`,
+        wx.cloud.callContainer({
+          config: {
+            env: that.globalData.cloudEnv,
+          },
+          path: '/api/login',
           method: 'POST',
+          header: {
+            'X-WX-SERVICE': that.globalData.serviceName,
+            'content-type': 'application/json',
+          },
           data: { code: res.code },
           success(resp) {
             if (resp.statusCode === 200) {
               that.globalData.token = resp.data.token;
-              // Notify pages that login is done
               if (that.loginCallback) {
                 that.loginCallback(resp.data);
               }
