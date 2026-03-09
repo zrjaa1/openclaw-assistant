@@ -11,21 +11,24 @@ const app = getApp();
 function sendMessage(message, conversationId, onChunk, onDone, onError) {
   let buffer = '';
   let gotDone = false;
-  let statusCode = 0;
 
-  const requestTask = wx.request({
-    url: `${app.globalData.baseUrl}/api/chat`,
+  const requestTask = wx.cloud.callContainer({
+    config: {
+      env: app.globalData.cloudEnv,
+    },
+    path: '/api/chat',
     method: 'POST',
-    enableChunkedTransfer: true,
-    responseType: 'text',
     header: {
+      'X-WX-SERVICE': app.globalData.serviceName,
       'Authorization': `Bearer ${app.globalData.token}`,
-      'Content-Type': 'application/json',
+      'content-type': 'application/json',
     },
     data: {
       message: message,
       conversation_id: conversationId,
     },
+    enableChunkedTransfer: true,
+    responseType: 'text',
     success(res) {
       statusCode = res.statusCode;
       if (res.statusCode === 403) {
@@ -81,17 +84,19 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
   }
 
   // Handle real-time chunks as they arrive
-  requestTask.onChunkReceived(function (res) {
-    if (res.data) {
-      let text;
-      if (res.data instanceof ArrayBuffer) {
-        text = String.fromCharCode.apply(null, new Uint8Array(res.data));
-      } else {
-        text = String(res.data);
+  if (requestTask && requestTask.onChunkReceived) {
+    requestTask.onChunkReceived(function (res) {
+      if (res.data) {
+        let text;
+        if (res.data instanceof ArrayBuffer) {
+          text = String.fromCharCode.apply(null, new Uint8Array(res.data));
+        } else {
+          text = String(res.data);
+        }
+        processSSEBuffer(text);
       }
-      processSSEBuffer(text);
-    }
-  });
+    });
+  }
 
   return requestTask;
 }
@@ -100,10 +105,14 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
  * Get remaining quota for current user.
  */
 function getQuota(callback) {
-  wx.request({
-    url: `${app.globalData.baseUrl}/api/quota`,
+  wx.cloud.callContainer({
+    config: {
+      env: app.globalData.cloudEnv,
+    },
+    path: '/api/quota',
     method: 'GET',
     header: {
+      'X-WX-SERVICE': app.globalData.serviceName,
       'Authorization': `Bearer ${app.globalData.token}`,
     },
     success(res) {
