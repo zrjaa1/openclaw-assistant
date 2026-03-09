@@ -28,7 +28,6 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
     },
     dataType: 'text',
     success(res) {
-      statusCode = res.statusCode;
       if (res.statusCode === 403) {
         onError('对话次数已用完，请充值后继续使用。');
         return;
