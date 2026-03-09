@@ -38,6 +38,25 @@ def verify_token(token: str) -> int:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
+@router.get("/api/debug/users")
+async def debug_users():
+    """Temporary debug endpoint to list all users. Remove before production."""
+    db = SessionLocal()
+    try:
+        users = db.query(User).all()
+        return [
+            {
+                "id": u.id,
+                "openid": u.openid,
+                "free_quota": u.free_quota,
+                "paid_quota": u.paid_quota,
+            }
+            for u in users
+        ]
+    finally:
+        db.close()
+
+
 @router.post("/api/login", response_model=LoginResponse)
 async def login(req: LoginRequest):
     from app.services.wechat_service import code_to_session
