@@ -130,6 +130,57 @@ async def test_second_message_works(mock_dify):
 
 @pytest.mark.asyncio
 @patch("app.api.chat.dify_service.send_message_stream", side_effect=fake_dify_stream)
+async def test_latest_conversation_restored(mock_dify):
+    """After sending a message, GET /api/conversation/latest should return it."""
+    from app.main import app
+
+    token = create_token(1)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # Send a message first
+        await client.post(
+            "/api/chat",
+            json={"message": "hello"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # Now fetch latest conversation
+        resp = await client.get(
+            "/api/conversation/latest",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["conversation_id"] is not None
+    assert len(data["messages"]) == 2  # user + assistant
+    assert data["messages"][0]["role"] == "user"
+    assert data["messages"][0]["content"] == "hello"
+    assert data["messages"][1]["role"] == "assistant"
+
+
+@pytest.mark.asyncio
+async def test_latest_conversation_empty():
+    """When no conversation exists, return null conversation_id."""
+    from app.main import app
+
+    token = create_token(1)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get(
+            "/api/conversation/latest",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json()["conversation_id"] is None
+    assert resp.json()["messages"] == []
+
+
+@pytest.mark.asyncio
+@patch("app.api.chat.dify_service.send_message_stream", side_effect=fake_dify_stream)
 async def test_sse_format_has_proper_newlines(mock_dify):
     """Each SSE data line should be followed by double newlines,
     so the frontend can split and parse them correctly."""

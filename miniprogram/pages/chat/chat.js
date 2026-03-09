@@ -15,14 +15,40 @@ Page({
   },
 
   onLoad() {
-    // Wait for login then load quota
+    // Wait for login then load quota and restore conversation
     if (app.globalData.token) {
       this.loadQuota();
+      this.loadLatestConversation();
     } else {
       app.loginCallback = (data) => {
         this.setData({ remainingQuota: data.remaining_quota });
+        this.loadLatestConversation();
       };
     }
+  },
+
+  loadLatestConversation() {
+    api.getLatestConversation((err, data) => {
+      if (err || !data || !data.conversation_id) return;
+
+      const messages = (data.messages || []).map((m) => {
+        const id = ++msgIdCounter;
+        const hasCode = m.role === 'assistant' && (m.content.includes('```') || m.content.includes('> '));
+        return {
+          id,
+          role: m.role,
+          content: m.content,
+          hasCode,
+          codeContent: hasCode ? this.extractCode(m.content) : '',
+        };
+      });
+
+      this.setData({
+        messages,
+        conversationId: data.conversation_id,
+        scrollToId: messages.length ? `msg-${messages[messages.length - 1].id}` : '',
+      });
+    });
   },
 
   loadQuota() {

@@ -16,6 +16,47 @@ class ChatRequest(BaseModel):
     conversation_id: int | None = None
 
 
+class MessageOut(BaseModel):
+    role: str
+    content: str
+
+
+class ConversationOut(BaseModel):
+    conversation_id: int
+    messages: list[MessageOut]
+
+
+@router.get("/api/conversation/latest")
+async def get_latest_conversation(authorization: str = Header(...)):
+    """Return the user's most recent conversation with message history."""
+    token = authorization.removeprefix("Bearer ").strip()
+    user_id = verify_token(token)
+
+    db = SessionLocal()
+    try:
+        conv = (
+            db.query(Conversation)
+            .filter(Conversation.user_id == user_id)
+            .order_by(Conversation.id.desc())
+            .first()
+        )
+        if not conv:
+            return {"conversation_id": None, "messages": []}
+
+        messages = (
+            db.query(Message)
+            .filter(Message.conversation_id == conv.id)
+            .order_by(Message.id.asc())
+            .all()
+        )
+        return ConversationOut(
+            conversation_id=conv.id,
+            messages=[MessageOut(role=m.role, content=m.content) for m in messages],
+        )
+    finally:
+        db.close()
+
+
 @router.post("/api/chat")
 async def chat(req: ChatRequest, authorization: str = Header(...)):
     token = authorization.removeprefix("Bearer ").strip()
