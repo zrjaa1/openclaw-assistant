@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.config import settings
-from app.db.database import SessionLocal, User
+from app.db.database import Conversation, Message, SessionLocal, User
 
 router = APIRouter()
 
@@ -53,6 +53,34 @@ async def debug_users():
             }
             for u in users
         ]
+    finally:
+        db.close()
+
+
+@router.get("/api/debug/conversations")
+async def debug_conversations():
+    """Temporary debug endpoint to inspect conversations and messages."""
+    db = SessionLocal()
+    try:
+        convs = db.query(Conversation).order_by(Conversation.id.desc()).limit(10).all()
+        result = []
+        for c in convs:
+            msgs = (
+                db.query(Message)
+                .filter(Message.conversation_id == c.id)
+                .order_by(Message.id.asc())
+                .all()
+            )
+            result.append({
+                "id": c.id,
+                "user_id": c.user_id,
+                "dify_conversation_id": c.dify_conversation_id,
+                "message_count": len(msgs),
+                "messages": [
+                    {"role": m.role, "content": m.content[:80]} for m in msgs
+                ],
+            })
+        return result
     finally:
         db.close()
 
