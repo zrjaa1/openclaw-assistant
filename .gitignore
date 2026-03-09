@@ -30,3 +30,6 @@ Thumbs.db
 # WeChat mini-program
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/
+
+# Private Keys
+private.*
