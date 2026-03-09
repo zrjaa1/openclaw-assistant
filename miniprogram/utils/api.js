@@ -31,25 +31,34 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
         return;
       }
       // Parse SSE data from response
-      const text = res.data;
-      if (typeof text === 'string') {
-        const lines = text.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === 'message') {
-                onChunk(data.content);
-              } else if (data.type === 'done') {
-                onDone({ conversationId: data.conversation_id });
-              } else if (data.type === 'error') {
-                onError(data.content);
-              }
-            } catch (e) {
-              // skip invalid JSON
+      const text = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      const lines = text.split('\n');
+      let gotDone = false;
+      let lastConversationId = null;
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.type === 'message') {
+              onChunk(data.content);
+            } else if (data.type === 'done') {
+              gotDone = true;
+              lastConversationId = data.conversation_id;
+              onDone({ conversationId: data.conversation_id });
+            } else if (data.type === 'error') {
+              onError(data.content);
+              return;
             }
+          } catch (e) {
+            // skip invalid JSON
           }
         }
+      }
+
+      // Fallback: if we received data but no done event, still finalize
+      if (!gotDone) {
+        onDone({ conversationId: lastConversationId });
       }
     },
     fail(err) {
