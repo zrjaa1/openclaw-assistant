@@ -9,10 +9,9 @@ const app = getApp();
  * @param {function} onError - Called on error
  */
 function sendMessage(message, conversationId, onChunk, onDone, onError) {
-  let buffer = '';
-  let gotDone = false;
-
-  const requestTask = wx.cloud.callContainer({
+  // Note: wx.cloud.callContainer does not support chunked/streaming transfer.
+  // The full SSE response is received at once and parsed in the success callback.
+  wx.cloud.callContainer({
     config: {
       env: app.globalData.cloudEnv,
     },
@@ -27,8 +26,7 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
       message: message,
       conversation_id: conversationId,
     },
-    enableChunkedTransfer: true,
-    responseType: 'text',
+    dataType: 'text',
     success(res) {
       statusCode = res.statusCode;
       if (res.statusCode === 403) {
@@ -36,69 +34,45 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
         return;
       }
       if (res.statusCode !== 200) {
-        onError(res.data.detail || '请求失败');
+        const detail = (typeof res.data === 'string') ? res.data : (res.data && res.data.detail) || '请求失败';
+        onError(detail);
         return;
       }
-      // Process any remaining data in buffer
-      if (res.data) {
-        const text = typeof res.data === 'string' ? res.data : '';
-        processSSEBuffer(text);
+
+      // Parse SSE events from the full response body
+      const text = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      const lines = text.split('\n');
+      let gotDone = false;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+            if (data.type === 'message') {
+              onChunk(data.content);
+            } else if (data.type === 'done') {
+              gotDone = true;
+              onDone({ conversationId: data.conversation_id });
+            } else if (data.type === 'error') {
+              gotDone = true;
+              onError(data.content);
+              return;
+            }
+          } catch (e) {
+            // skip invalid JSON
+          }
+        }
       }
-      // Ensure we always finalize
+
       if (!gotDone) {
         onDone({ conversationId: null });
       }
     },
     fail(err) {
-      if (!gotDone) {
-        onError('网络请求失败，请检查网络连接。');
-      }
+      onError('网络请求失败，请检查网络连接。');
     },
   });
-
-  function processSSEBuffer(text) {
-    buffer += text;
-    const parts = buffer.split('\n');
-    // Keep the last incomplete line in buffer
-    buffer = parts.pop() || '';
-
-    for (const line of parts) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('data: ')) {
-        try {
-          const data = JSON.parse(trimmed.slice(6));
-          if (data.type === 'message') {
-            onChunk(data.content);
-          } else if (data.type === 'done') {
-            gotDone = true;
-            onDone({ conversationId: data.conversation_id });
-          } else if (data.type === 'error') {
-            gotDone = true;
-            onError(data.content);
-          }
-        } catch (e) {
-          // skip invalid JSON
-        }
-      }
-    }
-  }
-
-  // Handle real-time chunks as they arrive
-  if (requestTask && requestTask.onChunkReceived) {
-    requestTask.onChunkReceived(function (res) {
-      if (res.data) {
-        let text;
-        if (res.data instanceof ArrayBuffer) {
-          text = String.fromCharCode.apply(null, new Uint8Array(res.data));
-        } else {
-          text = String(res.data);
-        }
-        processSSEBuffer(text);
-      }
-    });
-  }
-
-  return requestTask;
 }
 
 /**
