@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret: str = "change-me-in-production"
 
+    # Database
+    database_url: str = "sqlite:///openclaw_assistant.db"
+
     # Quota
     default_free_quota: int = 20
     exempt_openids: str = ""  # comma-separated openids that bypass quota
