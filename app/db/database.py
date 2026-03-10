@@ -15,6 +15,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     openid = Column(String(64), unique=True, nullable=False, index=True)
+    username = Column(String(64), nullable=True, unique=True, index=True)
+    password_hash = Column(String(128), nullable=True)
     free_quota = Column(Integer, nullable=False, default=20)
     paid_quota = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
