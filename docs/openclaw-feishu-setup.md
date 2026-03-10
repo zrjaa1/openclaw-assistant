@@ -6,6 +6,20 @@
 
 ---
 
+## ✅ 前置条件（开始之前请确认）
+
+在配置飞书之前，请先确认以下几项都已完成：
+
+- ✅ **OpenClaw 已安装** — 在终端输入 `openclaw --version`，能看到版本号说明安装成功
+- ✅ **大模型已配置** — 运行 `openclaw doctor`，结果全绿（没有红色 ✗）
+- ✅ **网关可以正常启动** — 运行 `openclaw gateway`，没有报错
+
+> 💡 **提示：** 如果以上任何一项不满足，说明基础配置还没完成。请先运行 `openclaw onboard` 完成初始化配置（选择一个大模型、填入 API Key），确认 `openclaw doctor` 全绿后再回来继续。
+
+> ⚠️ **不确定怎么做？** 直接告诉我你的情况（比如"我还没装 OpenClaw"或"openclaw doctor 有红色的"），我会先帮你搞定基础配置。
+
+---
+
 ## 🚀 第一步：安装飞书插件
 
 在开始一切之前，先确保 OpenClaw 已经安装了飞书插件。打开你的命令行窗口（Windows 用户打开 PowerShell，Mac/Linux 用户打开终端），输入：
@@ -13,8 +27,6 @@
 ```bash
 openclaw plugins install @openclaw/feishu
 ```
-
-> 💡 **提示：** 如果你是第一次配置 OpenClaw，建议先完成《OpenClaw 初始化与大模型配置指南》，确认 `openclaw doctor` 全绿后再回来看本文。
 
 ---
 
@@ -342,6 +354,14 @@ openclaw pairing approve feishu XXXXXX
 ```
 
 **步骤 7：** 批准后，再在飞书里发一条消息，机器人就会正常回复你了！🎉
+
+**步骤 8：** 最后，运行一次全面体检，确认飞书连接一切正常：
+
+```bash
+openclaw doctor
+```
+
+看到飞书相关的检查项全部显示绿色 `✓` 就说明配置完美！如果有红色 `✗`，根据提示信息排查（通常是权限或网关问题）。
 
 ---
 
