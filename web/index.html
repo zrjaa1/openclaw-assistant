@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .msg-user { background: #2563eb; color: white; }
+  .msg-assistant { background: #f3f4f6; color: #1f2937; }
+  pre code { display: block; overflow-x: auto; padding: 0.75rem; background: #1e293b; color: #e2e8f0; border-radius: 0.5rem; font-size: 0.85rem; }
+  .typing-dot { animation: blink 1.4s infinite both; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+  #messages::-webkit-scrollbar { width: 6px; }
+  #messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+</style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col">
+
+<!-- Auth Screen -->
+<div id="auth-screen" class="flex-1 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+    <h1 class="text-2xl font-bold text-center mb-1">OpenClaw Assistant</h1>
+    <p class="text-gray-500 text-center text-sm mb-6">OpenClaw 安装与使用助手</p>
+
+    <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
+      <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 text-sm font-medium rounded-md bg-white shadow">登录</button>
+      <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 text-sm font-medium rounded-md">注册</button>
+    </div>
+
+    <form id="auth-form" onsubmit="handleAuth(event)">
+      <input id="input-username" type="text" placeholder="用户名" autocomplete="username"
+        class="w-full mb-3 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+      <input id="input-password" type="password" placeholder="密码" autocomplete="current-password"
+        class="w-full mb-4 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+      <div id="auth-error" class="text-red-500 text-sm mb-3 hidden"></div>
+      <button type="submit" id="auth-btn"
+        class="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition text-sm">登录</button>
+    </form>
+  </div>
+</div>
+
+<!-- Chat Screen -->
+<div id="chat-screen" class="flex-1 flex flex-col hidden">
+  <!-- Header -->
+  <div class="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
+    <div>
+      <h1 class="font-bold text-lg">OpenClaw Assistant</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="quota-display" class="text-sm text-gray-500"></span>
+      <button onclick="logout()" class="text-sm text-gray-400 hover:text-red-500 transition">退出</button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+
+  <!-- Typing indicator -->
+  <div id="typing" class="hidden px-4 pb-2">
+    <div class="inline-flex items-center gap-1 bg-gray-100 rounded-2xl px-4 py-2">
+      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="bg-white border-t p-4 shrink-0">
+    <form onsubmit="sendMessage(event)" class="flex gap-2">
+      <textarea id="chat-input" rows="1" placeholder="输入问题..."
+        class="flex-1 resize-none px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage(event)}"></textarea>
+      <button type="submit" id="send-btn"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shrink-0">发送</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('token');
+let conversationId = null;
+let isStreaming = false;
+let authMode = 'login';
+
+// --- Auth ---
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').className = mode === 'login'
+    ? 'flex-1 py-2 text-sm font-medium rounded-md bg-white shadow'
+    : 'flex-1 py-2 text-sm font-medium rounded-md';
+  document.getElementById('tab-register').className = mode === 'register'
+    ? 'flex-1 py-2 text-sm font-medium rounded-md bg-white shadow'
+    : 'flex-1 py-2 text-sm font-medium rounded-md';
+  document.getElementById('auth-btn').textContent = mode === 'login' ? '登录' : '注册';
+  document.getElementById('input-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  hideError();
+}
+
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function hideError() {
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+async function handleAuth(e) {
+  e.preventDefault();
+  hideError();
+  const username = document.getElementById('input-username').value.trim();
+  const password = document.getElementById('input-password').value;
+
+  if (authMode === 'register') {
+    if (username.length < 3 || username.length > 32) { showError('用户名需要3-32个字符'); return; }
+    if (password.length < 6) { showError('密码至少6个字符'); return; }
+  }
+
+  const endpoint = authMode === 'login' ? '/api/web/login' : '/api/web/register';
+  try {
+    const res = await fetch(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.detail || '操作失败');
+      return;
+    }
+    token = data.token;
+    localStorage.setItem('token', token);
+    showChat(data.remaining_quota);
+  } catch (err) {
+    showError('网络错误，请重试');
+  }
+}
+
+function logout() {
+  token = null;
+  conversationId = null;
+  localStorage.removeItem('token');
+  document.getElementById('chat-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('input-username').value = '';
+  document.getElementById('input-password').value = '';
+}
+
+// --- Chat ---
+
+function showChat(quota) {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('chat-screen').classList.remove('hidden');
+  if (quota !== undefined) updateQuota(quota);
+  loadConversation();
+}
+
+function updateQuota(n) {
+  document.getElementById('quota-display').textContent = `剩余 ${n} 次`;
+}
+
+async function apiFetch(path, opts = {}) {
+  opts.headers = { ...opts.headers, Authorization: `Bearer ${token}` };
+  const res = await fetch(API + path, opts);
+  if (res.status === 401) { logout(); throw new Error('unauthorized'); }
+  return res;
+}
+
+async function loadConversation() {
+  try {
+    const res = await apiFetch('/api/conversation/latest');
+    const data = await res.json();
+    if (data.conversation_id) {
+      conversationId = data.conversation_id;
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      data.messages.forEach(m => appendMessage(m.role, m.content));
+    }
+    // Also load quota
+    const qres = await apiFetch('/api/quota');
+    const qdata = await qres.json();
+    updateQuota(qdata.remaining);
+  } catch (e) {
+    if (e.message !== 'unauthorized') console.error(e);
+  }
+}
+
+function appendMessage(role, content) {
+  const container = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
+
+  const bubble = document.createElement('div');
+  bubble.className = `max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+    role === 'user' ? 'msg-user' : 'msg-assistant'
+  }`;
+  bubble.innerHTML = renderMarkdown(content);
+
+  wrapper.appendChild(bubble);
+  container.appendChild(wrapper);
+  container.scrollTop = container.scrollHeight;
+  return bubble;
+}
+
+function renderMarkdown(text) {
+  // Code blocks
+  text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const escaped = escapeHtml(code.trim());
+    return `<div class="relative my-2"><pre><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs bg-gray-600 text-gray-200 px-2 py-1 rounded hover:bg-gray-500">复制</button></div>`;
+  });
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code class="bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded text-xs">$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Line breaks
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function copyCode(btn) {
+  const code = btn.previousElementSibling.querySelector('code').textContent;
+  navigator.clipboard.writeText(code);
+  btn.textContent = '已复制';
+  setTimeout(() => btn.textContent = '复制', 1500);
+}
+
+async function sendMessage(e) {
+  e.preventDefault();
+  if (isStreaming) return;
+
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  appendMessage('user', message);
+
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('typing').classList.remove('hidden');
+
+  const assistantBubble = appendMessage('assistant', '');
+
+  try {
+    const res = await fetch(API + '/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message, conversation_id: conversationId }),
+    });
+
+    if (res.status === 401) { logout(); return; }
+    if (res.status === 403) {
+      const data = await res.json();
+      assistantBubble.innerHTML = renderMarkdown(data.detail || '对话次数已用完');
+      return;
+    }
+    if (!res.ok) {
+      assistantBubble.innerHTML = renderMarkdown('请求失败，请重试');
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === 'message') {
+            fullContent += event.content;
+            assistantBubble.innerHTML = renderMarkdown(fullContent);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+          } else if (event.type === 'done') {
+            conversationId = event.conversation_id;
+          } else if (event.type === 'error') {
+            fullContent += '\n\n[错误: ' + event.content + ']';
+            assistantBubble.innerHTML = renderMarkdown(fullContent);
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+    }
+
+    // Refresh quota after message
+    try {
+      const qres = await apiFetch('/api/quota');
+      const qdata = await qres.json();
+      updateQuota(qdata.remaining);
+    } catch (e) { /* ignore */ }
+
+  } catch (err) {
+    if (err.message !== 'unauthorized') {
+      assistantBubble.innerHTML = renderMarkdown('网络错误，请重试');
+    }
+  } finally {
+    isStreaming = false;
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('typing').classList.add('hidden');
+  }
+}
+
+// --- Init ---
+if (token) {
+  showChat();
+}
+</script>
+</body>
+</html>
