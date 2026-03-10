@@ -12,40 +12,57 @@ App({
     this.login();
   },
 
-  login() {
+  login(callback) {
     const that = this;
-    wx.login({
-      success(res) {
-        if (!res.code) {
-          console.error('wx.login failed');
-          return;
-        }
-        wx.cloud.callContainer({
-          config: {
-            env: that.globalData.cloudEnv,
-          },
-          path: '/api/login',
-          method: 'POST',
-          header: {
-            'X-WX-SERVICE': that.globalData.serviceName,
-            'content-type': 'application/json',
-          },
-          data: { code: res.code },
-          success(resp) {
-            if (resp.statusCode === 200) {
-              that.globalData.token = resp.data.token;
-              if (that.loginCallback) {
-                that.loginCallback(resp.data);
+    that._loginPromise = new Promise((resolve, reject) => {
+      wx.login({
+        success(res) {
+          if (!res.code) {
+            console.error('wx.login failed');
+            reject(new Error('wx.login failed'));
+            return;
+          }
+          wx.cloud.callContainer({
+            config: {
+              env: that.globalData.cloudEnv,
+            },
+            path: '/api/login',
+            method: 'POST',
+            header: {
+              'X-WX-SERVICE': that.globalData.serviceName,
+              'content-type': 'application/json',
+            },
+            data: { code: res.code },
+            success(resp) {
+              if (resp.statusCode === 200) {
+                that.globalData.token = resp.data.token;
+                if (that.loginCallback) {
+                  that.loginCallback(resp.data);
+                }
+                if (callback) callback(null, resp.data);
+                resolve(resp.data);
+              } else {
+                console.error('Login failed:', resp.data);
+                if (callback) callback(resp.data);
+                reject(new Error('Login failed'));
               }
-            } else {
-              console.error('Login failed:', resp.data);
-            }
-          },
-          fail(err) {
-            console.error('Login request failed:', err);
-          },
-        });
-      },
+            },
+            fail(err) {
+              console.error('Login request failed:', err);
+              if (callback) callback(err);
+              reject(err);
+            },
+          });
+        },
+        fail(err) {
+          reject(err);
+        },
+      });
     });
+  },
+
+  reLogin() {
+    this.login();
+    return this._loginPromise;
   },
 });
