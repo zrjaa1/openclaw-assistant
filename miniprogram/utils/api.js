@@ -1,6 +1,35 @@
 const app = getApp();
 
 /**
+ * Make a cloud container request, auto-retrying once on 401 after re-login.
+ */
+function callWithAuth(options, retried) {
+  const opts = Object.assign({}, options, {
+    config: { env: app.globalData.cloudEnv },
+    header: Object.assign({
+      'X-WX-SERVICE': app.globalData.serviceName,
+      'Authorization': `Bearer ${app.globalData.token}`,
+      'content-type': 'application/json',
+    }, options.header || {}),
+  });
+
+  const originalSuccess = opts.success;
+  opts.success = function (res) {
+    if (res.statusCode === 401 && !retried) {
+      app.reLogin().then(() => {
+        callWithAuth(options, true);
+      }).catch(() => {
+        if (originalSuccess) originalSuccess(res);
+      });
+      return;
+    }
+    if (originalSuccess) originalSuccess(res);
+  };
+
+  wx.cloud.callContainer(opts);
+}
+
+/**
  * Send chat message and receive streaming response.
  * @param {string} message - User message
  * @param {number|null} conversationId - Existing conversation ID or null
@@ -9,19 +38,9 @@ const app = getApp();
  * @param {function} onError - Called on error
  */
 function sendMessage(message, conversationId, onChunk, onDone, onError) {
-  // Note: wx.cloud.callContainer does not support chunked/streaming transfer.
-  // The full SSE response is received at once and parsed in the success callback.
-  wx.cloud.callContainer({
-    config: {
-      env: app.globalData.cloudEnv,
-    },
+  callWithAuth({
     path: '/api/chat',
     method: 'POST',
-    header: {
-      'X-WX-SERVICE': app.globalData.serviceName,
-      'Authorization': `Bearer ${app.globalData.token}`,
-      'content-type': 'application/json',
-    },
     data: {
       message: message,
       conversation_id: conversationId,
@@ -78,16 +97,9 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
  * Get remaining quota for current user.
  */
 function getQuota(callback) {
-  wx.cloud.callContainer({
-    config: {
-      env: app.globalData.cloudEnv,
-    },
+  callWithAuth({
     path: '/api/quota',
     method: 'GET',
-    header: {
-      'X-WX-SERVICE': app.globalData.serviceName,
-      'Authorization': `Bearer ${app.globalData.token}`,
-    },
     success(res) {
       if (res.statusCode === 200) {
         callback(null, res.data.remaining);
@@ -105,16 +117,9 @@ function getQuota(callback) {
  * Load the user's latest conversation with message history.
  */
 function getLatestConversation(callback) {
-  wx.cloud.callContainer({
-    config: {
-      env: app.globalData.cloudEnv,
-    },
+  callWithAuth({
     path: '/api/conversation/latest',
     method: 'GET',
-    header: {
-      'X-WX-SERVICE': app.globalData.serviceName,
-      'Authorization': `Bearer ${app.globalData.token}`,
-    },
     success(res) {
       if (res.statusCode === 200) {
         callback(null, res.data);
