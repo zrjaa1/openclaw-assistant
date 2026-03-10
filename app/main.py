@@ -9,6 +9,10 @@ from app.db.database import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.config import settings
+
+    db_type = settings.database_url.split("://")[0] if "://" in settings.database_url else "unknown"
+    print(f"[startup] database backend: {db_type}")
     init_db()
     yield
 

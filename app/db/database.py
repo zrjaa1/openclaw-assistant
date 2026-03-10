@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
+from app.config import settings
+
 
 class Base(DeclarativeBase):
     pass
@@ -46,7 +48,13 @@ class Message(Base):
     conversation = relationship("Conversation", back_populates="messages")
 
 
-engine = create_engine("sqlite:///openclaw_assistant.db", echo=False)
+_engine_kwargs = {"echo": False}
+
+if not settings.database_url.startswith("sqlite"):
+    _engine_kwargs["pool_pre_ping"] = True
+    _engine_kwargs["pool_recycle"] = 3600
+
+engine = create_engine(settings.database_url, **_engine_kwargs)
 SessionLocal = sessionmaker(bind=engine)
 
 

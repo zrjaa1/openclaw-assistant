@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.config import settings
-from app.db.database import Conversation, Message, SessionLocal, User
+from app.db.database import SessionLocal, User
 
 router = APIRouter()
 
@@ -36,83 +36,6 @@ def verify_token(token: str) -> int:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-
-@router.get("/api/debug/users")
-async def debug_users():
-    """Temporary debug endpoint to list all users. Remove before production."""
-    db = SessionLocal()
-    try:
-        users = db.query(User).all()
-        return [
-            {
-                "id": u.id,
-                "openid": u.openid,
-                "free_quota": u.free_quota,
-                "paid_quota": u.paid_quota,
-            }
-            for u in users
-        ]
-    finally:
-        db.close()
-
-
-@router.get("/api/debug/conversations")
-async def debug_conversations():
-    """Temporary debug endpoint to inspect conversations and messages."""
-    db = SessionLocal()
-    try:
-        convs = db.query(Conversation).order_by(Conversation.id.desc()).limit(10).all()
-        result = []
-        for c in convs:
-            msgs = (
-                db.query(Message)
-                .filter(Message.conversation_id == c.id)
-                .order_by(Message.id.asc())
-                .all()
-            )
-            result.append({
-                "id": c.id,
-                "user_id": c.user_id,
-                "dify_conversation_id": c.dify_conversation_id,
-                "message_count": len(msgs),
-                "messages": [
-                    {"role": m.role, "content": m.content[:80]} for m in msgs
-                ],
-            })
-        return result
-    finally:
-        db.close()
-
-
-@router.get("/api/debug/dify-test")
-async def debug_dify_test():
-    """Send a test message to Dify and return raw SSE events."""
-    import httpx
-    from app.config import settings
-
-    url = f"{settings.dify_base_url}/chat-messages"
-    headers = {
-        "Authorization": f"Bearer {settings.dify_api_key}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "inputs": {},
-        "query": "Hi",
-        "response_mode": "streaming",
-        "user": "debug-test",
-    }
-
-    raw_lines = []
-    async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
-        async with client.stream("POST", url, json=payload, headers=headers) as resp:
-            async for chunk in resp.aiter_text():
-                for line in chunk.split("\n"):
-                    stripped = line.strip()
-                    if stripped:
-                        raw_lines.append(stripped)
-
-    return {"raw_lines": raw_lines}
 
 
 @router.post("/api/login", response_model=LoginResponse)
