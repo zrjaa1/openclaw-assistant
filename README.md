@@ -82,7 +82,7 @@ uvicorn app.main:app --reload --port 8000
 ### 运行测试
 
 ```bash
-pip install pytest pytest-asyncio  # requirements.txt 未包含测试依赖
+pip install -r requirements.txt -r requirements-test.txt
 python3 -m pytest tests/ -v
 ```
 
