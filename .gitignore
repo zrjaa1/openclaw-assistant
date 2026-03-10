@@ -12,6 +12,8 @@ env/
 
 # Environment
 .env
+.mcp.json
+.serena/
 
 # Database
 *.db
