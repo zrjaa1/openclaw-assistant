@@ -12,6 +12,16 @@ App({
     this.login();
   },
 
+  onShow() {
+    // Re-login on every foreground resume to keep token fresh.
+    // onLaunch already handles the cold start; onShow handles warm resume
+    // after the miniprogram has been backgrounded for hours.
+    if (this._hasLaunched) {
+      this.login();
+    }
+    this._hasLaunched = true;
+  },
+
   login(callback) {
     const that = this;
     that._loginPromise = new Promise((resolve, reject) => {
