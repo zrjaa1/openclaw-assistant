@@ -15,6 +15,22 @@ Page({
   },
 
   onLoad() {
+    this._initChat();
+  },
+
+  onShow() {
+    // Re-init on every foreground resume so that after a re-login
+    // (triggered by app.onShow) we reload conversation and quota.
+    // Use _loginPromise to wait for any in-flight login to finish.
+    if (app._loginPromise) {
+      app._loginPromise.then(() => {
+        this.loadQuota();
+        this.loadLatestConversation();
+      }).catch(() => {});
+    }
+  },
+
+  _initChat() {
     // Wait for login then load quota and restore conversation
     if (app.globalData.token) {
       this.loadQuota();
