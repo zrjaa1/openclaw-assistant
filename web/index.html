@@ -57,7 +57,21 @@
   </div>
 
   <!-- Messages -->
-  <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+  <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+    <!-- Welcome message (hidden once conversation starts) -->
+    <div id="welcome-msg" class="flex justify-start">
+      <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed msg-assistant">
+        你好！我是小龙虾（OpenClaw）的安装助手 🦞<br><br>
+        小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。<br><br>
+        它能帮你：<br>
+        • 在微信里随时问问题，就像跟朋友聊天<br>
+        • 每天自动发天气、新闻摘要、工作提醒<br>
+        • 发图片让 AI 帮你翻译、分析、总结<br>
+        • 你的数据在自己电脑上，不经过第三方<br><br>
+        告诉我你的操作系统（Windows、Mac 还是 Linux），我们开始安装吧！
+      </div>
+    </div>
+  </div>
 
   <!-- Typing indicator -->
   <div id="typing" class="hidden px-4 pb-2">
@@ -193,6 +207,8 @@ async function loadConversation() {
 }
 
 function appendMessage(role, content) {
+  const welcome = document.getElementById('welcome-msg');
+  if (welcome) welcome.remove();
   const container = document.getElementById('messages');
   const wrapper = document.createElement('div');
   wrapper.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';

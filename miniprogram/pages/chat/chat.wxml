@@ -11,7 +11,7 @@
     <view class="message assistant" wx:if="{{messages.length === 0}}">
       <view class="avatar">🦞</view>
       <view class="bubble">
-        <text>你好！我是 OpenClaw 安装助手。\n\n我可以一步步指导你在 Windows 上安装和配置 OpenClaw。\n\n直接告诉我你的需求，比如"我想在 Windows 上安装 OpenClaw"就可以开始了！</text>
+        <text>你好！我是小龙虾（OpenClaw）的安装助手 🦞\n\n小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。\n\n它能帮你：\n• 在微信里随时问问题，就像跟朋友聊天\n• 每天自动发天气、新闻摘要、工作提醒\n• 发图片让 AI 帮你翻译、分析、总结\n• 你的数据在自己电脑上，不经过第三方\n\n告诉我你的操作系统（Windows、Mac 还是 Linux），我们开始安装吧！</text>
       </view>
     </view>
 
