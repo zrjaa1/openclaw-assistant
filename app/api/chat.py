@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+MAX_MESSAGE_LENGTH = 2000
+
+
 class ChatRequest(BaseModel):
     message: str
     conversation_id: int | None = None
@@ -64,6 +67,12 @@ async def get_latest_conversation(authorization: str = Header(...)):
 async def chat(req: ChatRequest, authorization: str = Header(...)):
     token = authorization.removeprefix("Bearer ").strip()
     user_id = verify_token(token)
+
+    if len(req.message) > MAX_MESSAGE_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"消息长度不能超过{MAX_MESSAGE_LENGTH}字。",
+        )
 
     db = SessionLocal()
     try:
