@@ -33,5 +33,8 @@ Thumbs.db
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/
 
+# Local scripts
+scripts/
+
 # Private Keys
 private.*
