@@ -141,6 +141,11 @@ The frontend auto-detects the user's browser language (English/Chinese) and incl
 4. Configure System Prompt and LLM model (recommended: Claude Haiku 4.5 or Qwen)
 5. Copy the API Key into your `.env`
 
+## Future Considerations
+
+- **Message ID strategy**: The `messages` table currently uses auto-increment IDs. This is optimal for single-instance MySQL (sequential B-tree inserts, no page splits). If migrating to a distributed database (Cloud Spanner, TiDB, CockroachDB), switch to ULIDs or similar (time-ordered + random suffix) to avoid write hotspotting.
+- **Schema migrations**: Currently using `create_all()` which doesn't ALTER existing tables. Consider adding Alembic for production migration management.
+
 ## License
 
 MIT
