@@ -16,7 +16,7 @@ from app.api.auth import create_token
 # Fake Dify stream generator
 # ---------------------------------------------------------------------------
 
-async def fake_dify_stream(query, user_id, conversation_id=""):
+async def fake_dify_stream(query, user_id, conversation_id="", client_type="web"):
     """Simulate Dify workflow SSE events: message chunks + workflow_finished."""
     yield {"event": "workflow_started", "conversation_id": "dify-conv-abc123"}
     await asyncio.sleep(0)

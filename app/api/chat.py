@@ -20,6 +20,7 @@ MAX_MESSAGE_LENGTH = 2000
 class ChatRequest(BaseModel):
     message: str
     conversation_id: int | None = None
+    client_type: str = "web"
 
 
 class MessageOut(BaseModel):
@@ -93,11 +94,21 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
                 raise HTTPException(status_code=404, detail="Conversation not found")
             dify_conv_id = conv.dify_conversation_id
         else:
-            conv = Conversation(user_id=user_id)
-            db.add(conv)
-            db.commit()
-            db.refresh(conv)
-            dify_conv_id = ""
+            # Reuse existing conversation if the user already has one
+            conv = (
+                db.query(Conversation)
+                .filter(Conversation.user_id == user_id)
+                .order_by(Conversation.id.desc())
+                .first()
+            )
+            if conv:
+                dify_conv_id = conv.dify_conversation_id or ""
+            else:
+                conv = Conversation(user_id=user_id)
+                db.add(conv)
+                db.commit()
+                db.refresh(conv)
+                dify_conv_id = ""
 
         # Save user message
         user_msg = Message(
@@ -121,6 +132,7 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
                 query=req.message,
                 user_id=str(user_id),
                 conversation_id=dify_conv_id,
+                client_type=req.client_type,
             ):
                 event_type = event.get("event", "")
 

@@ -10,6 +10,7 @@ async def send_message_stream(
     query: str,
     user_id: str,
     conversation_id: str = "",
+    client_type: str = "web",
 ) -> AsyncGenerator[dict, None]:
     """Call Dify chat-messages API with streaming enabled.
 
@@ -23,7 +24,7 @@ async def send_message_stream(
         "Content-Type": "application/json",
     }
     payload = {
-        "inputs": {},
+        "inputs": {"client_type": client_type},
         "query": query,
         "response_mode": "streaming",
         "user": user_id,
