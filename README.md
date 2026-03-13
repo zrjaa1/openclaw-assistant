@@ -37,7 +37,7 @@ app/
 └── main.py              # FastAPI entry point
 web/
 ├── index.html           # Web frontend (single file, Tailwind CSS CDN)
-└── config.js            # API URL override for production
+└── config.js            # Generated at deploy time (gitignored)
 miniprogram/             # WeChat Mini Program
 tests/                   # pytest tests (58 tests)
 ```
@@ -124,11 +124,11 @@ The `web/` directory can be deployed as a static site on Cloudflare Pages:
 
 1. Connect your GitHub repo to Cloudflare Pages
 2. Set build output directory to `web/`
-3. No build command needed (static files only)
-4. Edit `web/config.js` to set your backend URL:
-   ```js
-   window.BACKEND_API_URL = 'https://your-backend.tcloudbase.com';
+3. Set build command to:
    ```
+   echo "window.BACKEND_API_URL = '${BACKEND_API_URL}';" > web/config.js
+   ```
+4. Add environment variable `BACKEND_API_URL` = your backend URL (e.g. `https://your-backend.tcloudbase.com`)
 5. Deploy — your frontend is now on a global CDN with HTTPS
 
 The frontend auto-detects the user's browser language (English/Chinese) and includes a manual toggle.
