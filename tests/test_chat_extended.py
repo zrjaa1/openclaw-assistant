@@ -64,8 +64,9 @@ async def test_chat_returns_403_when_quota_exhausted(mock_dify):
 
 @pytest.mark.asyncio
 @patch("app.api.chat.dify_service.send_message_stream", side_effect=fake_dify_stream)
-async def test_chat_returns_404_for_wrong_conversation(mock_dify):
-    """POST /api/chat with a non-existent conversation_id should return 404."""
+async def test_chat_falls_back_when_conversation_not_found(mock_dify):
+    """POST /api/chat with a non-existent conversation_id should fall back
+    to the user's latest conversation (or create one), not return 404."""
     from app.main import app
 
     token = create_token(1)
@@ -78,7 +79,8 @@ async def test_chat_returns_404_for_wrong_conversation(mock_dify):
             headers={"Authorization": f"Bearer {token}"},
         )
 
-    assert resp.status_code == 404
+    # Should succeed (falls back to creating a new conversation)
+    assert resp.status_code == 200
 
 
 @pytest.mark.asyncio
