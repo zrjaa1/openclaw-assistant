@@ -15,13 +15,13 @@ from app.api.auth import create_token
 # Fake Dify generators
 # ---------------------------------------------------------------------------
 
-async def fake_dify_stream(query, user_id, conversation_id=""):
+async def fake_dify_stream(query, user_id, conversation_id="", client_type="web"):
     yield {"event": "message", "answer": "reply", "conversation_id": "dify-123"}
     await asyncio.sleep(0)
     yield {"event": "workflow_finished", "conversation_id": "dify-123"}
 
 
-async def fake_dify_stream_error(query, user_id, conversation_id=""):
+async def fake_dify_stream_error(query, user_id, conversation_id="", client_type="web"):
     yield {"event": "message", "answer": "partial", "conversation_id": "dify-123"}
     await asyncio.sleep(0)
     raise ConnectionError("Dify API connection lost")

@@ -12,7 +12,7 @@ from httpx import ASGITransport, AsyncClient
 # Fake Dify stream generator
 # ---------------------------------------------------------------------------
 
-async def fake_dify_stream(query, user_id, conversation_id=""):
+async def fake_dify_stream(query, user_id, conversation_id="", client_type="web"):
     yield {"event": "workflow_started", "conversation_id": "dify-web-conv"}
     await asyncio.sleep(0)
     yield {"event": "message", "answer": "Web reply!", "conversation_id": "dify-web-conv"}
