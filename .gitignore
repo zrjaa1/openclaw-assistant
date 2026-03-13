@@ -25,6 +25,9 @@ env/
 *.swp
 *.swo
 
+# Frontend config (generated at deploy time)
+web/config.js
+
 # OS
 .DS_Store
 Thumbs.db
