@@ -38,3 +38,9 @@ scripts/
 
 # Private Keys
 private.*
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
