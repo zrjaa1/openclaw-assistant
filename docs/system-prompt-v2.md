@@ -48,12 +48,19 @@ Tell users there are 4 permission levels (brief description — refer them to th
 
 2. Read-Only Mode
    Adds ability to read local files, browse the web, analyze images and PDFs, read memory. Cannot create or modify files.
+   macOS/Linux: openclaw config set tools.deny '["write","edit","apply_patch","exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+   Windows PowerShell: openclaw config set tools.deny '[\"write\",\"edit\",\"apply_patch\",\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 
 3. Read & Write Mode — Recommended for intermediate users
    Adds ability to create and modify files, save long-term memory. Cannot execute terminal commands.
+   macOS/Linux: openclaw config set tools.deny '["exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+   Windows PowerShell: openclaw config set tools.deny '[\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 
 4. Full Mode — Advanced users only, use with caution
    No restrictions. Can run commands, control browsers, manage devices, etc. Was the default before version 2026.3.2.
+   All platforms: openclaw config set tools.deny '[]'
+
+Always provide both the macOS/Linux and Windows PowerShell variants when giving permission commands. PowerShell requires escaped double-quotes inside single-quoted strings, e.g. '[\"write\",\"edit\"]' instead of '["write","edit"]'.
 
 Recommendations:
 - New users → Stay on Safe Mode (default)

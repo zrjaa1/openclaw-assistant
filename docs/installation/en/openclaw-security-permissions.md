@@ -57,10 +57,16 @@ Note: In Read-Only mode, OpenClaw cannot save new memories. Each new conversatio
 
 Best for: Users who want the AI to help with research, read files, and analyze content — but don't want it changing anything.
 
-To set up, copy and paste this command into your terminal (PowerShell on Windows):
+To set up, copy and paste the appropriate command for your platform:
 
-```
+**macOS / Linux (bash/zsh):**
+```bash
 openclaw config set tools.deny '["write","edit","apply_patch","exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+**Windows (PowerShell):**
+```powershell
+openclaw config set tools.deny '[\"write\",\"edit\",\"apply_patch\",\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 Then restart:
@@ -90,8 +96,14 @@ Best for: Users who want OpenClaw to remember things, help organize files, or wr
 
 To set up:
 
-```
+**macOS / Linux (bash/zsh):**
+```bash
 openclaw config set tools.deny '["exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+**Windows (PowerShell):**
+```powershell
+openclaw config set tools.deny '[\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 Then restart:
@@ -117,7 +129,7 @@ Additional capabilities:
 
 Best for: Advanced users and developers who fully trust OpenClaw and understand all its capabilities.
 
-To set up:
+To set up (same for all platforms):
 
 ```
 openclaw config set tools.deny '[]'
