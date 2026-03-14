@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # JWT
     jwt_secret: str = "change-me-in-production"
+    jwt_expiry_hours: int = 8
 
     # Database
     database_url: str = "sqlite:///openclaw_assistant.db"
