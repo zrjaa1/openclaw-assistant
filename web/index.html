@@ -298,6 +298,33 @@ let conversationId = null;
 let isStreaming = false;
 let authMode = 'login';
 
+let sessionTimer = null;
+
+function getTokenExpiry() {
+  if (!token) return 0;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function isTokenExpired() {
+  return getTokenExpiry() <= Date.now();
+}
+
+function scheduleAutoLogout() {
+  if (sessionTimer) clearTimeout(sessionTimer);
+  const remaining = getTokenExpiry() - Date.now();
+  if (remaining <= 0) { logout(); return; }
+  sessionTimer = setTimeout(() => logout(), remaining);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && token && isTokenExpired()) logout();
+});
+
 // ==================== AUTH ====================
 
 function switchTab(mode) {
@@ -350,6 +377,7 @@ async function handleAuth(e) {
     }
     token = data.token;
     localStorage.setItem('token', token);
+    scheduleAutoLogout();
     showChat(data.remaining_quota);
   } catch (err) {
     showError(t('networkError'));
@@ -357,6 +385,7 @@ async function handleAuth(e) {
 }
 
 function logout() {
+  if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
   token = null;
   conversationId = null;
   localStorage.removeItem('token');
@@ -517,6 +546,7 @@ function autoResize(el) {
 async function sendMessage(e) {
   e.preventDefault();
   if (isStreaming) return;
+  if (isTokenExpired()) { logout(); return; }
 
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
@@ -618,7 +648,12 @@ document.getElementById('lang-toggle').addEventListener('click', function(e) {
 
 applyLang();
 if (token) {
-  showChat();
+  if (isTokenExpired()) {
+    logout();
+  } else {
+    scheduleAutoLogout();
+    showChat();
+  }
 }
 </script>
 </body>
