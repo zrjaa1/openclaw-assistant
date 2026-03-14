@@ -37,12 +37,10 @@
 
 ### Backend (Tencent Cloud Run)
 
-| Environment | URL | Notes |
-|-------------|-----|-------|
-| **Production** | _TBD_ | Tencent Cloud Run prod instance |
-| **Experiment** | _TBD_ | Tencent Cloud Run experiment instance |
-
-> ⚠️ Backend URLs to be filled in once Tencent Cloud Run instances are provisioned.
+| Environment | URL |
+|-------------|-----|
+| **Production** | https://openclaw-assistant-231524-7-1409765446.sh.run.tcloudbase.com |
+| **Experiment** | https://openclaw-experiment-231524-7-1409765446.sh.run.tcloudbase.com |
 
 ---
 
