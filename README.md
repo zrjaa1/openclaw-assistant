@@ -127,7 +127,14 @@ All 58 tests run without external services (Dify/WeChat APIs are mocked).
 
 ### Backend — Tencent Cloud Run
 
-The backend is deployed on Tencent Cloud Run (微信云托管). Configure via the Tencent Cloud console with production environment variables (MySQL, Dify API Key, WeChat credentials).
+The backend is deployed on Tencent Cloud Run (微信云托管). Configure via the Tencent Cloud console with environment variables (MySQL, Dify API Key, WeChat credentials).
+
+| Environment | Database Name | Branch |
+|-------------|----------|--------|
+| Production  | `openclaw` | `main` |
+| Experiment  | `openclaw-experiment` | `experiment` |
+
+Both databases are hosted on the same MySQL instance. Set `DATABASE_URL` per service to point to the correct database.
 
 ### Frontend — Cloudflare Pages
 
