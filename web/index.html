@@ -117,13 +117,6 @@ tailwind.config = {
       <span class="font-semibold text-text-primary text-sm">OpenClaw Assistant</span>
     </div>
     <div class="flex items-center gap-3">
-      <button id="new-chat-btn" onclick="startNewChat()"
-        class="text-xs text-text-secondary hover:text-text-primary transition px-2 py-1.5 rounded-lg hover:bg-surface-2 flex items-center gap-1">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        <span id="new-chat-label"></span>
-      </button>
       <button id="lang-toggle"
         class="text-xs text-text-secondary hover:text-text-primary transition px-2 py-1.5 rounded-lg hover:bg-surface-2"></button>
       <span id="quota-display" class="hidden"></span>
@@ -203,7 +196,6 @@ const STRINGS = {
     requestFailed: 'Request failed, please try again',
     copied: 'Copied',
     copy: 'Copy',
-    newChat: 'New chat',
     welcome: `
       <p class="font-medium mb-2">Hi! I'm the OpenClaw assistant.</p>
       <p class="mb-2">OpenClaw is an open-source tool that brings AI into your everyday chat apps — Telegram, Discord, WhatsApp, Slack, and more. No new apps to learn, just chat.</p>
@@ -234,7 +226,6 @@ const STRINGS = {
     requestFailed: '请求失败，请重试',
     copied: '已复制',
     copy: '复制',
-    newChat: '新对话',
     welcome: `
       <p class="font-medium mb-2">你好！我是小龙虾（OpenClaw）的助手。</p>
       <p class="mb-2">小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。</p>
@@ -275,7 +266,6 @@ function applyLang() {
   document.getElementById('auth-lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
   // Chat screen
   document.getElementById('lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
-  document.getElementById('new-chat-label').textContent = t('newChat');
   document.getElementById('logout-btn').textContent = t('logout');
   document.getElementById('chat-input').placeholder = t('inputPlaceholder');
   const welcomeText = document.getElementById('welcome-text');
@@ -391,11 +381,6 @@ function logout() {
   localStorage.removeItem('token');
   document.getElementById('chat-screen').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
-  resetChatUI();
-}
-
-function startNewChat() {
-  conversationId = null;
   resetChatUI();
 }
 
