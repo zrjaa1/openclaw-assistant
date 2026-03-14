@@ -139,18 +139,30 @@ Can only send and receive messages. Cannot read/write files or run commands. If 
 
 Adds the ability to read local files, browse the web, analyze images and PDFs, and read memory. Cannot create or modify files. Note: cannot save new memories.
 
-Copy and paste this command into your terminal (PowerShell on Windows):
+Copy and paste the appropriate command for your platform:
 
-```
+macOS / Linux (bash/zsh):
+```bash
 openclaw config set tools.deny '["write","edit","apply_patch","exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+Windows (PowerShell):
+```powershell
+openclaw config set tools.deny '[\"write\",\"edit\",\"apply_patch\",\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 **3. Read & Write Mode — Recommended for intermediate users**
 
 Adds the ability to create and modify files and save long-term memory. Cannot execute terminal commands.
 
-```
+macOS / Linux (bash/zsh):
+```bash
 openclaw config set tools.deny '["exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+Windows (PowerShell):
+```powershell
+openclaw config set tools.deny '[\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 **4. Full Mode — Advanced users only, use with caution**

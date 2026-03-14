@@ -145,18 +145,30 @@ A：重新运行 `openclaw onboard` 即可，不会影响已有配置。
 
 在安全模式基础上，还可以阅读本地文件、浏览网页、分析图片和 PDF、读取记忆。但不能创建或修改文件。注意：不能保存新的记忆。
 
-复制下面这行命令粘贴到终端里（Windows 用 PowerShell）：
+请根据你的操作系统选择对应的命令：
 
-```
+macOS / Linux（bash/zsh）：
+```bash
 openclaw config set tools.deny '["write","edit","apply_patch","exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+Windows（PowerShell）：
+```powershell
+openclaw config set tools.deny '[\"write\",\"edit\",\"apply_patch\",\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 **3. 读写模式（Read & Write Mode）— 进阶推荐**
 
 在只读模式基础上，还可以创建和修改文件、保存长期记忆。但不能执行终端命令。
 
-```
+macOS / Linux（bash/zsh）：
+```bash
 openclaw config set tools.deny '["exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+```
+
+Windows（PowerShell）：
+```powershell
+openclaw config set tools.deny '[\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 ```
 
 **4. 完全权限（Full Mode）— 高级用户，慎用**

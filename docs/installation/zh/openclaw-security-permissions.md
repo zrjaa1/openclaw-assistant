@@ -59,9 +59,13 @@
 
 设置方法：
 
-复制下面这行命令粘贴到终端里（Windows 用 PowerShell）：
+macOS / Linux（bash/zsh）：
 
 openclaw config set tools.deny '["write","edit","apply_patch","exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+
+Windows（PowerShell）：
+
+openclaw config set tools.deny '[\"write\",\"edit\",\"apply_patch\",\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 
 然后重启：
 
@@ -88,7 +92,13 @@ openclaw gateway restart
 
 设置方法：
 
+macOS / Linux（bash/zsh）：
+
 openclaw config set tools.deny '["exec","process","sessions_spawn","nodes","canvas","cron","gateway"]'
+
+Windows（PowerShell）：
+
+openclaw config set tools.deny '[\"exec\",\"process\",\"sessions_spawn\",\"nodes\",\"canvas\",\"cron\",\"gateway\"]'
 
 然后重启：
 
@@ -111,7 +121,7 @@ openclaw gateway restart
 
 适合谁：完全信任小龙虾，且清楚了解所有功能含义的高级用户或开发者。
 
-设置方法：
+设置方法（所有平台通用）：
 
 openclaw config set tools.deny '[]'
 
