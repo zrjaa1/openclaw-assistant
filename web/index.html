@@ -54,6 +54,12 @@ tailwind.config = {
 
   /* Selection */
   ::selection { background: rgba(99, 102, 241, 0.3); }
+
+  /* User message bubbles: prevent long commands from overflowing */
+  .user-bubble {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
 </style>
 </head>
 <body class="bg-surface-0 flex flex-col overflow-hidden text-text-primary" style="height: 100vh; height: 100dvh;">
@@ -430,7 +436,7 @@ function appendMessage(role, content) {
 
   const bubble = document.createElement('div');
   if (role === 'user') {
-    bubble.className = 'max-w-[85%] sm:max-w-[75%] bg-accent-500 text-white rounded-2xl rounded-tr-md px-5 py-3 text-sm leading-relaxed';
+    bubble.className = 'max-w-[85%] sm:max-w-[75%] bg-accent-500 text-white rounded-2xl rounded-tr-md px-5 py-3 text-sm leading-relaxed user-bubble';
     bubble.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
   } else {
     bubble.className = 'max-w-[85%] sm:max-w-[75%] bg-surface-2 rounded-2xl rounded-tl-md px-5 py-4 text-sm leading-relaxed text-text-primary border border-border-subtle';
@@ -456,6 +462,21 @@ function renderMarkdown(text) {
     const langLabel = lang ? `<span class="absolute top-2.5 left-3 text-xs text-text-tertiary font-mono">${lang}</span>` : '';
     return `<div class="relative my-3">${langLabel}<pre class="mt-0"><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs text-text-tertiary px-2 py-1 rounded-md hover:bg-surface-3 hover:text-text-secondary transition">${t('copy')}</button></div>`;
   });
+  // Heuristic: auto-format bare CLI command lines as code blocks.
+  // Detects lines starting with known command prefixes that haven't already
+  // been converted to HTML (i.e., not residual lines inside fenced code blocks).
+  const CLI_PREFIX = /^(openclaw|curl|npm|pip3?|python3?|node|npx|iwr|invoke-webrequest|pwsh|powershell|bash|sh|sudo|apt(?:-get)?|brew|yarn|git |docker|wget|chmod|export |echo )/i;
+  text = text.replace(/^(?!<)(.+)$/gm, function(line) {
+    const trimmed = line.trimStart();
+    // Skip residual lines from already-converted multi-line code blocks
+    if (trimmed.includes('</')) return line;
+    if (CLI_PREFIX.test(trimmed)) {
+      const escaped = escapeHtml(trimmed);
+      return `<div class="relative my-2"><pre class="mt-0"><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs text-text-tertiary px-2 py-1 rounded-md hover:bg-surface-3 hover:text-text-secondary transition">${t('copy')}</button></div>`;
+    }
+    return line;
+  });
+
   // Inline code
   text = text.replace(/`([^`]+)`/g, '<code class="bg-surface-3 text-text-primary px-1.5 py-0.5 rounded text-xs font-mono border border-border-subtle">$1</code>');
   // Headings (## and ###)
