@@ -120,18 +120,29 @@ The backend is deployed on Tencent Cloud Run (微信云托管). Configure via th
 
 ### Frontend — Cloudflare Pages
 
-The `web/` directory can be deployed as a static site on Cloudflare Pages:
+The `web/` directory is deployed as a static site on Cloudflare Pages.
 
-1. Connect your GitHub repo to Cloudflare Pages
-2. Set build output directory to `web/`
-3. Set build command to:
-   ```
-   echo "window.BACKEND_API_URL = '${BACKEND_API_URL}';" > web/config.js
-   ```
-4. Add environment variable `BACKEND_API_URL` = your backend URL (e.g. `https://your-backend.tcloudbase.com`)
-5. Deploy — your frontend is now on a global CDN with HTTPS
+| Environment | URL | Branch | Backend |
+|-------------|-----|--------|---------|
+| Production | https://openclaw-assistant-eg3.pages.dev | `main` | Tencent Cloud Run (prod) |
+| Experiment | https://experiment.openclaw-assistant-eg3.pages.dev | `experiment` | Tencent Cloud Run (experiment) |
 
-The frontend auto-detects the user's browser language (English/Chinese) and includes a manual toggle.
+#### Setup
+
+1. Create a **Pages** project in Cloudflare (not Workers) and connect your GitHub repo
+2. Configure build settings:
+   - **Framework preset**: None
+   - **Build command**: `echo "window.BACKEND_API_URL = '${BACKEND_API_URL}';" > web/config.js`
+   - **Build output directory**: `web`
+   - **Build watch paths**: `web/*`
+3. Add the `BACKEND_API_URL` environment variable under **Settings → Variables and Secrets**, using "Specify per environment" to set different backend URLs for Production and Preview
+4. Deploy — pushes to `main` deploy to production, other branches get preview URLs
+
+#### Notes
+
+- `web/config.js` is gitignored — it's generated at deploy time by the build command from the `BACKEND_API_URL` env var
+- No build tooling required (plain HTML + Tailwind CSS CDN)
+- The frontend auto-detects the user's browser language (English/Chinese) and includes a manual toggle
 
 ## Configuring Dify
 
