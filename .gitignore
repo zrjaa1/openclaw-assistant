@@ -41,3 +41,7 @@ scripts/
 
 # Private Keys
 private.*
+
+# Sensitive docs (credentials, internal URLs)
+TEST_ACCOUNTS.md
+docs/ENVIRONMENTS.md
