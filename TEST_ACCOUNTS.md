@@ -11,13 +11,14 @@
 ## Experiment Environment
 
 ### Test Account #1
-- **Username:** testuser
+- **Username:** testuser2
 - **Password:** TestPass2024!
 - **Backend:** https://openclaw-experiment-231524-7-1409765446.sh.run.tcloudbase.com
 - **Frontend:** https://experiment.openclaw-assistant-eg3.pages.dev
 - **Quota:** 20 messages (default)
 - **Created:** 2026-03-13
-- **Last verified:** 2026-03-13 ✅ (register + login verified via API)
+- **Last verified:** 2026-03-13 ✅ (register + login + chat verified via browser)
+- **Note:** Original `testuser` account was lost during DB migration (experiment switched from SQLite to MySQL). Re-registered as `testuser2`.
 
 ---
 
@@ -30,7 +31,7 @@
 - **Frontend:** https://openclaw-assistant-eg3.pages.dev
 - **Quota:** 100 messages
 - **Created:** 2026-03-13
-- **Last verified:** 2026-03-13 ✅ (register + login verified via API)
+- **Last verified:** 2026-03-13 ✅ (login + chat verified via browser)
 
 ---
 
