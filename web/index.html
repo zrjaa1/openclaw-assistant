@@ -111,6 +111,13 @@ tailwind.config = {
       <span class="font-semibold text-text-primary text-sm">OpenClaw Assistant</span>
     </div>
     <div class="flex items-center gap-3">
+      <button id="new-chat-btn" onclick="startNewChat()"
+        class="text-xs text-text-secondary hover:text-text-primary transition px-2 py-1.5 rounded-lg hover:bg-surface-2 flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span id="new-chat-label"></span>
+      </button>
       <button id="lang-toggle"
         class="text-xs text-text-secondary hover:text-text-primary transition px-2 py-1.5 rounded-lg hover:bg-surface-2"></button>
       <span id="quota-display" class="hidden"></span>
@@ -190,12 +197,13 @@ const STRINGS = {
     requestFailed: 'Request failed, please try again',
     copied: 'Copied',
     copy: 'Copy',
+    newChat: 'New chat',
     welcome: `
       <p class="font-medium mb-2">Hi! I'm the OpenClaw assistant.</p>
-      <p class="mb-2">OpenClaw is an open-source tool that brings AI into your everyday chat apps — WeChat, Feishu, DingTalk, and more. No new apps to learn, just chat.</p>
+      <p class="mb-2">OpenClaw is an open-source tool that brings AI into your everyday chat apps — Telegram, Discord, WhatsApp, Slack, and more. No new apps to learn, just chat.</p>
       <p class="mb-2">It can help you:</p>
       <ul class="list-disc list-inside mb-2 space-y-0.5 text-text-secondary">
-        <li>Chat with AI right inside WeChat</li>
+        <li>Chat with AI right inside your favorite messaging app</li>
         <li>Get daily weather, news, and reminders automatically</li>
         <li>Send images for translation, analysis, or summaries</li>
         <li>Keep your data on your own machine</li>
@@ -220,6 +228,7 @@ const STRINGS = {
     requestFailed: '请求失败，请重试',
     copied: '已复制',
     copy: '复制',
+    newChat: '新对话',
     welcome: `
       <p class="font-medium mb-2">你好！我是小龙虾（OpenClaw）的助手。</p>
       <p class="mb-2">小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。</p>
@@ -260,6 +269,7 @@ function applyLang() {
   document.getElementById('auth-lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
   // Chat screen
   document.getElementById('lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
+  document.getElementById('new-chat-label').textContent = t('newChat');
   document.getElementById('logout-btn').textContent = t('logout');
   document.getElementById('chat-input').placeholder = t('inputPlaceholder');
   const welcomeText = document.getElementById('welcome-text');
@@ -324,7 +334,7 @@ async function handleAuth(e) {
   try {
     const res = await fetch(API + endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept-Language': currentLang },
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
@@ -346,6 +356,11 @@ function logout() {
   localStorage.removeItem('token');
   document.getElementById('chat-screen').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
+  resetChatUI();
+}
+
+function startNewChat() {
+  conversationId = null;
   resetChatUI();
 }
 
@@ -443,12 +458,18 @@ function renderMarkdown(text) {
   });
   // Inline code
   text = text.replace(/`([^`]+)`/g, '<code class="bg-surface-3 text-text-primary px-1.5 py-0.5 rounded text-xs font-mono border border-border-subtle">$1</code>');
+  // Headings (## and ###)
+  text = text.replace(/^###\s+(.+)$/gm, '<p class="font-semibold text-text-primary mt-3 mb-1">$1</p>');
+  text = text.replace(/^##\s+(.+)$/gm, '<p class="font-semibold text-text-primary text-base mt-3 mb-1">$1</p>');
   // Bold
   text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-text-primary">$1</strong>');
-  // Lists (simple)
+  // Numbered lists
+  text = text.replace(/^(\d+)\.\s+(.+)$/gm, '<li class="ml-4 list-decimal" value="$1">$2</li>');
+  // Bullet lists
   text = text.replace(/^[•\-]\s+(.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
-  // Wrap consecutive <li> in <ul>
-  text = text.replace(/((?:<li[^>]*>.*?<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
+  // Wrap consecutive <li> in <ul>/<ol>
+  text = text.replace(/((?:<li class="ml-4 list-decimal"[^>]*>.*?<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
+  text = text.replace(/((?:<li class="ml-4 list-disc">.*?<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
   // Line breaks
   text = text.replace(/\n/g, '<br>');
   return text;
