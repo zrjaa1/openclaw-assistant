@@ -4,6 +4,17 @@ An AI-powered installation guide for [OpenClaw](https://github.com/nicepkg/openc
 
 OpenClaw is an open-source tool that brings AI into everyday chat apps (WeChat, Feishu, DingTalk). This assistant walks users through the installation step-by-step, with one-click copy for terminal commands.
 
+## ⭐ Key Documentation
+
+**Start here for project work:**
+
+- **docs/ENVIRONMENTS.md** - Environment setup (local, experiment, production) + endpoints
+- **TEST_ACCOUNTS.md** - Test account credentials for development
+- **docs/basic/** and **docs/installation/** - User-facing docs (bilingual zh/en)
+- **docs/system-prompt-v2.md** (English) / **docs/系统提示词-v2.md** (Chinese) - Dify system prompts
+
+---
+
 ## Architecture
 
 ```
