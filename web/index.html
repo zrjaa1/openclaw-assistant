@@ -1,117 +1,334 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenClaw Assistant</title>
+<script src="config.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        surface: { 0: '#0a0a0a', 1: '#111111', 2: '#1a1a1a', 3: '#222222', 4: '#2a2a2a' },
+        border: { subtle: '#1e1e1e', default: '#2a2a2a', hover: '#333333' },
+        text: { primary: '#f0f0f0', secondary: '#999999', tertiary: '#666666' },
+        accent: { 500: '#6366f1', 600: '#5558e6', 700: '#4447d0' },
+      }
+    }
+  }
+}
+</script>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .msg-user { background: #2563eb; color: white; }
-  .msg-assistant { background: #f3f4f6; color: #1f2937; }
-  pre code { display: block; overflow-x: auto; padding: 0.75rem; background: #1e293b; color: #e2e8f0; border-radius: 0.5rem; font-size: 0.85rem; }
-  .typing-dot { animation: blink 1.4s infinite both; }
-  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
-  #messages::-webkit-scrollbar { width: 6px; }
-  #messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+  /* Scrollbar */
+  .chat-scroll::-webkit-scrollbar { width: 5px; }
+  .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+  .chat-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 999px; }
+
+  /* Code blocks */
+  pre code {
+    display: block; overflow-x: auto; padding: 1rem;
+    background: #0d0d0d; color: #cdd6f4; border-radius: 0.75rem;
+    border: 1px solid #1e1e1e;
+    font-size: 0.8rem; line-height: 1.6;
+    font-family: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-enter { animation: fadeIn 0.3s ease-out; }
+
+  @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  .typing-pulse { animation: pulse 1.5s ease-in-out infinite; }
+  .typing-pulse:nth-child(2) { animation-delay: 0.15s; }
+  .typing-pulse:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Textarea */
+  #chat-input { max-height: 120px; }
+
+  /* Smooth transitions */
+  .screen-transition { transition: opacity 0.2s ease; }
+
+  /* Selection */
+  ::selection { background: rgba(99, 102, 241, 0.3); }
+
+  /* User message bubbles: prevent long commands from overflowing */
+  .user-bubble {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
 </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col">
+<body class="bg-surface-0 flex flex-col overflow-hidden text-text-primary" style="height: 100vh; height: 100dvh;">
 
-<!-- Auth Screen -->
-<div id="auth-screen" class="flex-1 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-    <h1 class="text-2xl font-bold text-center mb-1">OpenClaw Assistant</h1>
-    <p class="text-gray-500 text-center text-sm mb-6">OpenClaw 安装与使用助手</p>
-
-    <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
-      <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 text-sm font-medium rounded-md bg-white shadow">登录</button>
-      <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 text-sm font-medium rounded-md">注册</button>
+<!-- ==================== AUTH SCREEN ==================== -->
+<div id="auth-screen" class="flex-1 flex flex-col screen-transition">
+  <div class="flex justify-end p-4 shrink-0 relative z-10">
+    <button id="auth-lang-toggle" class="text-sm text-text-secondary hover:text-text-primary transition px-3 py-1.5 rounded-lg hover:bg-surface-2"></button>
+  </div>
+  <div class="flex-1 flex items-center justify-center p-4 -mt-12 relative z-0">
+  <div class="bg-surface-1 rounded-2xl border border-border-default p-8 w-full max-w-sm">
+    <!-- Logo / Brand -->
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-accent-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+        </svg>
+      </div>
+      <h1 class="text-xl font-semibold text-text-primary">OpenClaw Assistant</h1>
+      <p id="auth-tagline" class="text-sm text-text-tertiary mt-1"></p>
     </div>
 
-    <form id="auth-form" onsubmit="handleAuth(event)">
-      <input id="input-username" type="text" placeholder="用户名" autocomplete="username"
-        class="w-full mb-3 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-      <input id="input-password" type="password" placeholder="密码" autocomplete="current-password"
-        class="w-full mb-4 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-      <div id="auth-error" class="text-red-500 text-sm mb-3 hidden"></div>
-      <button type="submit" id="auth-btn"
-        class="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition text-sm">登录</button>
-    </form>
+      <!-- Tab Toggle -->
+      <div class="flex mb-5 bg-surface-0 rounded-xl p-1">
+        <button id="tab-login" onclick="switchTab('login')"
+          class="flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-surface-3 text-text-primary"></button>
+        <button id="tab-register" onclick="switchTab('register')"
+          class="flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-text-tertiary"></button>
+      </div>
+
+      <form id="auth-form" onsubmit="handleAuth(event)">
+        <input id="input-username" type="text" autocomplete="username"
+          class="w-full mb-3 px-4 py-3 bg-surface-2 border border-border-default rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 text-sm text-text-primary placeholder-text-tertiary transition-all duration-200" />
+        <input id="input-password" type="password" autocomplete="current-password"
+          class="w-full mb-4 px-4 py-3 bg-surface-2 border border-border-default rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 text-sm text-text-primary placeholder-text-tertiary transition-all duration-200" />
+        <div id="auth-error" class="text-red-400 text-sm mb-3 hidden"></div>
+        <button type="submit" id="auth-btn"
+          class="w-full py-3 bg-accent-500 text-white font-medium rounded-xl hover:bg-accent-600 active:bg-accent-700 transition-all duration-200 text-sm"></button>
+      </form>
+
+  </div>
   </div>
 </div>
 
-<!-- Chat Screen -->
-<div id="chat-screen" class="flex-1 flex flex-col hidden">
+<!-- ==================== CHAT SCREEN ==================== -->
+<div id="chat-screen" class="flex-1 flex flex-col hidden screen-transition min-h-0 overflow-hidden">
   <!-- Header -->
-  <div class="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
-    <div>
-      <h1 class="font-bold text-lg">OpenClaw Assistant</h1>
+  <div class="bg-surface-1/80 backdrop-blur-sm border-b border-border-subtle px-4 py-3 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 bg-accent-500 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+        </svg>
+      </div>
+      <span class="font-semibold text-text-primary text-sm">OpenClaw Assistant</span>
     </div>
     <div class="flex items-center gap-3">
-      <span id="quota-display" class="text-sm text-gray-500"></span>
-      <button onclick="logout()" class="text-sm text-gray-400 hover:text-red-500 transition">退出</button>
+      <button id="lang-toggle"
+        class="text-xs text-text-secondary hover:text-text-primary transition px-2 py-1.5 rounded-lg hover:bg-surface-2"></button>
+      <span id="quota-display" class="hidden"></span>
+      <button onclick="logout()" id="logout-btn"
+        class="text-xs text-text-tertiary hover:text-red-400 transition px-2 py-1 rounded-lg hover:bg-surface-2"></button>
     </div>
   </div>
 
   <!-- Messages -->
-  <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-    <!-- Welcome message (hidden once conversation starts) -->
-    <div id="welcome-msg" class="flex justify-start">
-      <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed msg-assistant">
-        你好！我是小龙虾（OpenClaw）的安装助手 🦞<br><br>
-        小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。<br><br>
-        它能帮你：<br>
-        • 在微信里随时问问题，就像跟朋友聊天<br>
-        • 每天自动发天气、新闻摘要、工作提醒<br>
-        • 发图片让 AI 帮你翻译、分析、总结<br>
-        • 你的数据在自己电脑上，不经过第三方<br><br>
-        告诉我你的操作系统（Windows、Mac 还是 Linux），我们开始安装吧！
+  <div id="messages" class="flex-1 overflow-y-auto chat-scroll">
+    <div class="max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <!-- Welcome message -->
+      <div id="welcome-msg" class="msg-enter">
+        <div class="flex justify-start">
+          <div class="max-w-[85%] sm:max-w-[75%] bg-surface-2 rounded-2xl rounded-tl-md px-5 py-4 text-sm leading-relaxed text-text-primary border border-border-subtle">
+            <div id="welcome-text"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Typing indicator -->
-  <div id="typing" class="hidden px-4 pb-2">
-    <div class="inline-flex items-center gap-1 bg-gray-100 rounded-2xl px-4 py-2">
-      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
-      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
-      <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+  <div id="typing" class="hidden">
+    <div class="max-w-3xl mx-auto px-4 pb-2">
+      <div class="flex justify-start">
+        <div class="bg-surface-2 rounded-2xl rounded-tl-md px-5 py-3 border border-border-subtle">
+          <div class="flex items-center gap-1.5">
+            <span class="typing-pulse w-1.5 h-1.5 bg-text-tertiary rounded-full inline-block"></span>
+            <span class="typing-pulse w-1.5 h-1.5 bg-text-tertiary rounded-full inline-block"></span>
+            <span class="typing-pulse w-1.5 h-1.5 bg-text-tertiary rounded-full inline-block"></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Input -->
-  <div class="bg-white border-t p-4 shrink-0">
-    <form onsubmit="sendMessage(event)" class="flex gap-2">
-      <textarea id="chat-input" rows="1" placeholder="输入问题..."
-        class="flex-1 resize-none px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage(event)}"></textarea>
-      <button type="submit" id="send-btn"
-        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shrink-0">发送</button>
-    </form>
+  <!-- Input area -->
+  <div class="shrink-0 border-t border-border-subtle bg-surface-1/80 backdrop-blur-sm">
+    <div class="max-w-3xl mx-auto p-4">
+      <form onsubmit="sendMessage(event)" class="flex items-end gap-3">
+        <div class="flex-1 relative">
+          <textarea id="chat-input" rows="1"
+            class="w-full resize-none px-4 py-3 bg-surface-2 border border-border-default rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 text-sm text-text-primary placeholder-text-tertiary leading-relaxed transition-all duration-200"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage(event)}"
+            oninput="autoResize(this)"></textarea>
+        </div>
+        <button type="submit" id="send-btn"
+          class="p-3 bg-accent-500 text-white rounded-xl hover:bg-accent-600 active:bg-accent-700 transition-all duration-200 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+          </svg>
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
-const API = window.location.origin;
+// ==================== i18n ====================
+
+const STRINGS = {
+  en: {
+    tagline: 'Your AI assistant for OpenClaw',
+    login: 'Log in',
+    register: 'Sign up',
+    username: 'Username',
+    password: 'Password',
+    usernameTooShort: 'Username must be 3–32 characters',
+    passwordTooShort: 'Password must be at least 6 characters',
+    networkError: 'Network error, please try again',
+    actionFailed: 'Action failed',
+    logout: 'Log out',
+    inputPlaceholder: 'Ask a question...',
+    quotaLabel: (n) => `${n} left`,
+    quotaExhausted: 'No messages remaining. Please top up to continue.',
+    requestFailed: 'Request failed, please try again',
+    copied: 'Copied',
+    copy: 'Copy',
+    welcome: `
+      <p class="font-medium mb-2">Hi! I'm the OpenClaw assistant.</p>
+      <p class="mb-2">OpenClaw is an open-source tool that brings AI into your everyday chat apps — Telegram, Discord, WhatsApp, Slack, and more. No new apps to learn, just chat.</p>
+      <p class="mb-2">It can help you:</p>
+      <ul class="list-disc list-inside mb-2 space-y-0.5 text-text-secondary">
+        <li>Chat with AI right inside your favorite messaging app</li>
+        <li>Get daily weather, news, and reminders automatically</li>
+        <li>Send images for translation, analysis, or summaries</li>
+        <li>Keep your data on your own machine</li>
+      </ul>
+      <p>Tell me your operating system (Windows, Mac, or Linux) and let's get started!</p>
+    `,
+  },
+  zh: {
+    tagline: '小龙虾助手',
+    login: '登录',
+    register: '注册',
+    username: '用户名',
+    password: '密码',
+    usernameTooShort: '用户名需要 3–32 个字符',
+    passwordTooShort: '密码至少 6 个字符',
+    networkError: '网络错误，请重试',
+    actionFailed: '操作失败',
+    logout: '退出',
+    inputPlaceholder: '输入问题...',
+    quotaLabel: (n) => `剩余 ${n} 次`,
+    quotaExhausted: '对话次数已用完，请充值后继续使用。',
+    requestFailed: '请求失败，请重试',
+    copied: '已复制',
+    copy: '复制',
+    welcome: `
+      <p class="font-medium mb-2">你好！我是小龙虾（OpenClaw）的助手。</p>
+      <p class="mb-2">小龙虾是一个让 AI 住进你微信、飞书、钉钉的开源工具——不用打开新网页，直接在聊天里用 AI。</p>
+      <p class="mb-2">它能帮你：</p>
+      <ul class="list-disc list-inside mb-2 space-y-0.5 text-text-secondary">
+        <li>在微信里随时问问题，就像跟朋友聊天</li>
+        <li>每天自动发天气、新闻摘要、工作提醒</li>
+        <li>发图片让 AI 帮你翻译、分析、总结</li>
+        <li>你的数据在自己电脑上，不经过第三方</li>
+      </ul>
+      <p>告诉我你的操作系统（Windows、Mac 还是 Linux），我们开始安装吧！</p>
+    `,
+  },
+};
+
+// Detect language: respect explicit user choice, otherwise auto-detect from browser
+function detectLang() {
+  const saved = localStorage.getItem('lang');
+  // Only trust localStorage if user explicitly toggled (marked by 'lang-explicit')
+  if (saved && localStorage.getItem('lang-explicit') === '1') return saved;
+  // Auto-detect from browser
+  return navigator.language.startsWith('zh') ? 'zh' : 'en';
+}
+let currentLang = detectLang();
+
+function t(key) {
+  return STRINGS[currentLang][key] || STRINGS.en[key] || key;
+}
+
+function applyLang() {
+  // Auth screen
+  document.getElementById('auth-tagline').textContent = t('tagline');
+  document.getElementById('tab-login').textContent = t('login');
+  document.getElementById('tab-register').textContent = t('register');
+  document.getElementById('input-username').placeholder = t('username');
+  document.getElementById('input-password').placeholder = t('password');
+  document.getElementById('auth-btn').textContent = authMode === 'login' ? t('login') : t('register');
+  document.getElementById('auth-lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
+  // Chat screen
+  document.getElementById('lang-toggle').textContent = currentLang === 'zh' ? 'EN' : '中文';
+  document.getElementById('logout-btn').textContent = t('logout');
+  document.getElementById('chat-input').placeholder = t('inputPlaceholder');
+  const welcomeText = document.getElementById('welcome-text');
+  if (welcomeText) welcomeText.innerHTML = t('welcome');
+  document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('lang', currentLang);
+  localStorage.setItem('lang-explicit', '1');  // mark as user's explicit choice
+  applyLang();
+}
+
+// ==================== CONFIG ====================
+
+const API = window.BACKEND_API_URL || window.location.origin;
 let token = localStorage.getItem('token');
 let conversationId = null;
 let isStreaming = false;
 let authMode = 'login';
 
-// --- Auth ---
+let sessionTimer = null;
+
+function getTokenExpiry() {
+  if (!token) return 0;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function isTokenExpired() {
+  return getTokenExpiry() <= Date.now();
+}
+
+function scheduleAutoLogout() {
+  if (sessionTimer) clearTimeout(sessionTimer);
+  const remaining = getTokenExpiry() - Date.now();
+  if (remaining <= 0) { logout(); return; }
+  sessionTimer = setTimeout(() => logout(), remaining);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && token && isTokenExpired()) logout();
+});
+
+// ==================== AUTH ====================
 
 function switchTab(mode) {
   authMode = mode;
-  document.getElementById('tab-login').className = mode === 'login'
-    ? 'flex-1 py-2 text-sm font-medium rounded-md bg-white shadow'
-    : 'flex-1 py-2 text-sm font-medium rounded-md';
-  document.getElementById('tab-register').className = mode === 'register'
-    ? 'flex-1 py-2 text-sm font-medium rounded-md bg-white shadow'
-    : 'flex-1 py-2 text-sm font-medium rounded-md';
-  document.getElementById('auth-btn').textContent = mode === 'login' ? '登录' : '注册';
+  const loginTab = document.getElementById('tab-login');
+  const regTab = document.getElementById('tab-register');
+  if (mode === 'login') {
+    loginTab.className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-surface-3 text-text-primary';
+    regTab.className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-text-tertiary';
+  } else {
+    regTab.className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-surface-3 text-text-primary';
+    loginTab.className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-text-tertiary';
+  }
+  document.getElementById('auth-btn').textContent = mode === 'login' ? t('login') : t('register');
   document.getElementById('input-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
   hideError();
 }
@@ -132,42 +349,56 @@ async function handleAuth(e) {
   const password = document.getElementById('input-password').value;
 
   if (authMode === 'register') {
-    if (username.length < 3 || username.length > 32) { showError('用户名需要3-32个字符'); return; }
-    if (password.length < 6) { showError('密码至少6个字符'); return; }
+    if (username.length < 3 || username.length > 32) { showError(t('usernameTooShort')); return; }
+    if (password.length < 6) { showError(t('passwordTooShort')); return; }
   }
 
   const endpoint = authMode === 'login' ? '/api/web/login' : '/api/web/register';
   try {
     const res = await fetch(API + endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept-Language': currentLang },
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) {
-      showError(data.detail || '操作失败');
+      showError(data.detail || t('actionFailed'));
       return;
     }
     token = data.token;
     localStorage.setItem('token', token);
+    scheduleAutoLogout();
     showChat(data.remaining_quota);
   } catch (err) {
-    showError('网络错误，请重试');
+    showError(t('networkError'));
   }
 }
 
 function logout() {
+  if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
   token = null;
   conversationId = null;
   localStorage.removeItem('token');
   document.getElementById('chat-screen').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
-  document.getElementById('messages').innerHTML = '';
+  resetChatUI();
+}
+
+function resetChatUI() {
+  const container = document.getElementById('messages').querySelector('.max-w-3xl');
+  container.innerHTML = `
+    <div id="welcome-msg" class="msg-enter">
+      <div class="flex justify-start">
+        <div class="max-w-[85%] sm:max-w-[75%] bg-surface-2 rounded-2xl rounded-tl-md px-5 py-4 text-sm leading-relaxed text-text-primary border border-border-subtle">
+          <div id="welcome-text">${t('welcome')}</div>
+        </div>
+      </div>
+    </div>`;
   document.getElementById('input-username').value = '';
   document.getElementById('input-password').value = '';
 }
 
-// --- Chat ---
+// ==================== CHAT ====================
 
 function showChat(quota) {
   document.getElementById('auth-screen').classList.add('hidden');
@@ -177,7 +408,8 @@ function showChat(quota) {
 }
 
 function updateQuota(n) {
-  document.getElementById('quota-display').textContent = `剩余 ${n} 次`;
+  const fn = t('quotaLabel');
+  document.getElementById('quota-display').textContent = typeof fn === 'function' ? fn(n) : `${n}`;
 }
 
 async function apiFetch(path, opts = {}) {
@@ -193,11 +425,10 @@ async function loadConversation() {
     const data = await res.json();
     if (data.conversation_id) {
       conversationId = data.conversation_id;
-      const container = document.getElementById('messages');
+      const container = document.getElementById('messages').querySelector('.max-w-3xl');
       container.innerHTML = '';
       data.messages.forEach(m => appendMessage(m.role, m.content));
     }
-    // Also load quota
     const qres = await apiFetch('/api/quota');
     const qdata = await qres.json();
     updateQuota(qdata.remaining);
@@ -209,32 +440,71 @@ async function loadConversation() {
 function appendMessage(role, content) {
   const welcome = document.getElementById('welcome-msg');
   if (welcome) welcome.remove();
-  const container = document.getElementById('messages');
+
+  const container = document.getElementById('messages').querySelector('.max-w-3xl');
   const wrapper = document.createElement('div');
-  wrapper.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
+  wrapper.className = 'msg-enter';
+
+  const align = document.createElement('div');
+  align.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
 
   const bubble = document.createElement('div');
-  bubble.className = `max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-    role === 'user' ? 'msg-user' : 'msg-assistant'
-  }`;
-  bubble.innerHTML = renderMarkdown(content);
+  if (role === 'user') {
+    bubble.className = 'max-w-[85%] sm:max-w-[75%] bg-accent-500 text-white rounded-2xl rounded-tr-md px-5 py-3 text-sm leading-relaxed user-bubble';
+    bubble.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+  } else {
+    bubble.className = 'max-w-[85%] sm:max-w-[75%] bg-surface-2 rounded-2xl rounded-tl-md px-5 py-4 text-sm leading-relaxed text-text-primary border border-border-subtle';
+    bubble.innerHTML = renderMarkdown(content);
+  }
 
-  wrapper.appendChild(bubble);
+  align.appendChild(bubble);
+  wrapper.appendChild(align);
   container.appendChild(wrapper);
-  container.scrollTop = container.scrollHeight;
+  scrollToBottom();
   return bubble;
 }
 
+function scrollToBottom() {
+  const el = document.getElementById('messages');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
 function renderMarkdown(text) {
-  // Code blocks
+  // Code blocks with language label
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
     const escaped = escapeHtml(code.trim());
-    return `<div class="relative my-2"><pre><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs bg-gray-600 text-gray-200 px-2 py-1 rounded hover:bg-gray-500">复制</button></div>`;
+    const langLabel = lang ? `<span class="absolute top-2.5 left-3 text-xs text-text-tertiary font-mono">${lang}</span>` : '';
+    return `<div class="relative my-3">${langLabel}<pre class="mt-0"><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs text-text-tertiary px-2 py-1 rounded-md hover:bg-surface-3 hover:text-text-secondary transition">${t('copy')}</button></div>`;
   });
+  // Heuristic: auto-format bare CLI command lines as code blocks.
+  // Detects lines starting with known command prefixes that haven't already
+  // been converted to HTML (i.e., not residual lines inside fenced code blocks).
+  const CLI_PREFIX = /^(openclaw|curl|npm|pip3?|python3?|node|npx|iwr|invoke-webrequest|pwsh|powershell|bash|sh|sudo|apt(?:-get)?|brew|yarn|git |docker|wget|chmod|export |echo )/i;
+  text = text.replace(/^(?!<)(.+)$/gm, function(line) {
+    const trimmed = line.trimStart();
+    // Skip residual lines from already-converted multi-line code blocks
+    if (trimmed.includes('</')) return line;
+    if (CLI_PREFIX.test(trimmed)) {
+      const escaped = escapeHtml(trimmed);
+      return `<div class="relative my-2"><pre class="mt-0"><code>${escaped}</code></pre><button onclick="copyCode(this)" class="absolute top-2 right-2 text-xs text-text-tertiary px-2 py-1 rounded-md hover:bg-surface-3 hover:text-text-secondary transition">${t('copy')}</button></div>`;
+    }
+    return line;
+  });
+
   // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code class="bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded text-xs">$1</code>');
+  text = text.replace(/`([^`]+)`/g, '<code class="bg-surface-3 text-text-primary px-1.5 py-0.5 rounded text-xs font-mono border border-border-subtle">$1</code>');
+  // Headings (## and ###)
+  text = text.replace(/^###\s+(.+)$/gm, '<p class="font-semibold text-text-primary mt-3 mb-1">$1</p>');
+  text = text.replace(/^##\s+(.+)$/gm, '<p class="font-semibold text-text-primary text-base mt-3 mb-1">$1</p>');
   // Bold
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-text-primary">$1</strong>');
+  // Numbered lists
+  text = text.replace(/^(\d+)\.\s+(.+)$/gm, '<li class="ml-4 list-decimal" value="$1">$2</li>');
+  // Bullet lists
+  text = text.replace(/^[•\-]\s+(.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
+  // Wrap consecutive <li> in <ul>/<ol>
+  text = text.replace(/((?:<li class="ml-4 list-decimal"[^>]*>.*?<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
+  text = text.replace(/((?:<li class="ml-4 list-disc">.*?<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
   // Line breaks
   text = text.replace(/\n/g, '<br>');
   return text;
@@ -247,26 +517,34 @@ function escapeHtml(text) {
 }
 
 function copyCode(btn) {
-  const code = btn.previousElementSibling.querySelector('code').textContent;
+  const code = btn.parentElement.querySelector('code').textContent;
   navigator.clipboard.writeText(code);
-  btn.textContent = '已复制';
-  setTimeout(() => btn.textContent = '复制', 1500);
+  btn.textContent = t('copied');
+  setTimeout(() => btn.textContent = t('copy'), 1500);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
 async function sendMessage(e) {
   e.preventDefault();
   if (isStreaming) return;
+  if (isTokenExpired()) { logout(); return; }
 
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
   if (!message) return;
 
   input.value = '';
+  input.style.height = 'auto';
   appendMessage('user', message);
 
   isStreaming = true;
   document.getElementById('send-btn').disabled = true;
   document.getElementById('typing').classList.remove('hidden');
+  scrollToBottom();
 
   const assistantBubble = appendMessage('assistant', '');
 
@@ -277,17 +555,17 @@ async function sendMessage(e) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ message, conversation_id: conversationId }),
+      body: JSON.stringify({ message, conversation_id: conversationId, client_type: 'web' }),
     });
 
     if (res.status === 401) { logout(); return; }
     if (res.status === 403) {
       const data = await res.json();
-      assistantBubble.innerHTML = renderMarkdown(data.detail || '对话次数已用完');
+      assistantBubble.innerHTML = renderMarkdown(data.detail || t('quotaExhausted'));
       return;
     }
     if (!res.ok) {
-      assistantBubble.innerHTML = renderMarkdown('请求失败，请重试');
+      assistantBubble.innerHTML = renderMarkdown(t('requestFailed'));
       return;
     }
 
@@ -312,18 +590,18 @@ async function sendMessage(e) {
           if (event.type === 'message') {
             fullContent += event.content;
             assistantBubble.innerHTML = renderMarkdown(fullContent);
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            scrollToBottom();
           } else if (event.type === 'done') {
             conversationId = event.conversation_id;
           } else if (event.type === 'error') {
-            fullContent += '\n\n[错误: ' + event.content + ']';
+            fullContent += '\n\n[Error: ' + event.content + ']';
             assistantBubble.innerHTML = renderMarkdown(fullContent);
           }
         } catch (e) { /* ignore parse errors */ }
       }
     }
 
-    // Refresh quota after message
+    // Refresh quota
     try {
       const qres = await apiFetch('/api/quota');
       const qdata = await qres.json();
@@ -332,7 +610,7 @@ async function sendMessage(e) {
 
   } catch (err) {
     if (err.message !== 'unauthorized') {
-      assistantBubble.innerHTML = renderMarkdown('网络错误，请重试');
+      assistantBubble.innerHTML = renderMarkdown(t('requestFailed'));
     }
   } finally {
     isStreaming = false;
@@ -341,9 +619,26 @@ async function sendMessage(e) {
   }
 }
 
-// --- Init ---
+// ==================== INIT ====================
+
+// Bind lang toggles via addEventListener (more robust than onclick attribute)
+document.getElementById('auth-lang-toggle').addEventListener('click', function(e) {
+  e.preventDefault();
+  toggleLang();
+});
+document.getElementById('lang-toggle').addEventListener('click', function(e) {
+  e.preventDefault();
+  toggleLang();
+});
+
+applyLang();
 if (token) {
-  showChat();
+  if (isTokenExpired()) {
+    logout();
+  } else {
+    scheduleAutoLogout();
+    showChat();
+  }
 }
 </script>
 </body>

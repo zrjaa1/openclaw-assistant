@@ -1,93 +1,95 @@
-# 小龙虾能帮你做什么？— OpenClaw 功能总览
+# What Can OpenClaw Do For You? — Feature Overview
 
-你有没有想过，如果有一个 AI 助手能直接住在你的微信、飞书或钉钉里，随时帮你做事，那该多好？
+Ever wished you had an AI assistant that lives right inside your favorite chat app — ready to help whenever you need it?
 
-这就是小龙虾（OpenClaw）——一个把 AI 助手接入你日常聊天工具的开源平台。
-
----
-
-## 它不是又一个聊天机器人
-
-市面上的 AI 聊天工具很多，但小龙虾不一样：
-
-它不是一个网页，不需要你专门打开一个新的 App。你在微信、飞书、钉钉里跟它聊天，就像跟朋友聊天一样自然。
-
-它能主动找你。不是你问它才回答——你可以让它每天早上给你发天气预报，每周五提醒你交周报。
-
-它能用工具。不只是聊天，它能帮你搜索网页、查日历、读文件、甚至控制智能家居。
-
-它是你自己的。数据在你自己的电脑上，不经过第三方服务器。你的聊天记录、API 密钥都只属于你。
+That's OpenClaw — an open-source platform that brings AI into the messaging tools you already use every day.
 
 ---
 
-## 具体能做什么？
+## It's Not Just Another Chatbot
 
-以下是一些真实的使用场景，帮你了解小龙虾的能力：
+There are plenty of AI chat tools out there, but OpenClaw is different:
 
-日常助手
-- 问任何问题，就像跟 ChatGPT 聊天一样，但在你已有的聊天工具里
-- 发一张图片让它帮你分析、翻译、总结
-- 发一段语音，它自动转成文字并回复
-- 帮你搜索网上的最新信息
+It lives where you already are. No new app to install, no website to bookmark. You chat with it in Telegram, Discord, WhatsApp, Slack, or iMessage — just like texting a friend.
 
-定时自动化
-- "每天早上8点告诉我今天北京的天气"
-- "每个工作日下午5点半提醒我写日报"
-- "每周一早上给我一份上周的新闻摘要"
-- "20分钟后提醒我去开会"
-你只需要用聊天的方式告诉它，不需要学任何技术命令。
+It reaches out to you. It doesn't just wait for your questions — you can have it send you a weather forecast every morning or remind you to submit your weekly report every Friday.
 
-多平台支持
-- 微信 — 通过代理服务接入
-- 飞书 — 官方插件，配置简单
-- 钉钉 — 社区插件支持
-- 还支持：Telegram、Discord、WhatsApp、iMessage 等
+It uses tools. Beyond chatting, it can search the web, check your calendar, read files, and even control smart home devices.
 
-技能扩展
-小龙虾支持安装"技能"来扩展能力，就像手机装 App 一样：
-- 天气查询
-- 网页搜索
-- 日历管理
-- 智能家居控制
-- 还有更多社区开发的技能
+It's yours. Your data stays on your own computer. Your chat history and API keys belong to you — not some third-party server.
 
 ---
 
-## 谁适合用小龙虾？
+## What Can It Actually Do?
 
-想要一个随身 AI 助手的人 — 不需要单独打开网页，在聊天工具里直接用
-重视隐私的人 — 数据在自己电脑上，不经过第三方
-喜欢折腾的人 — 开源项目，可以自己定制和扩展
-想要自动化提醒的人 — 定时任务让 AI 主动找你
+Here are some real use cases to give you an idea:
+
+Everyday Assistant
+- Ask it anything, just like ChatGPT, but right in your existing chat app
+- Send an image and ask it to analyze, translate, or summarize
+- Send a voice message — it transcribes and replies automatically
+- Have it search the web for the latest information
+
+Scheduled Automation
+- "Tell me the weather in New York every morning at 8 AM"
+- "Remind me to write my daily report every weekday at 5:30 PM"
+- "Give me a weekly news summary every Monday morning"
+- "Remind me about my meeting in 20 minutes"
+Just tell it in plain English — no technical commands needed.
+
+Multi-Platform Support
+- Telegram — simple setup, works great
+- Discord — full bot integration
+- WhatsApp — supported
+- Slack — workspace integration
+- iMessage — macOS native
+- And more: Signal, Line, IRC, Google Chat...
+
+Skill Extensions
+OpenClaw supports installable "skills" to extend its capabilities, like apps on a phone:
+- Weather lookups
+- Web search
+- Calendar management
+- Smart home control
+- And many more community-built skills
 
 ---
 
-## 需要什么条件？
+## Who Is OpenClaw For?
 
-你需要：
-- 一台能联网的电脑（Windows、Mac 或 Linux 都行）
-- 一个 AI 模型的 API 密钥（国内推荐阿里通义千问，免费额度够个人使用）
-- 大约 30 分钟的配置时间（有安装助手全程指导你）
-
-你不需要：
-- 编程经验
-- 特别高配的电脑
-- 付费（小龙虾本身免费，AI 模型可以选免费额度的）
+Anyone who wants a personal AI assistant — without opening yet another website or app
+Privacy-conscious users — your data stays on your machine
+Tinkerers and power users — it's open source, fully customizable
+People who want proactive reminders — scheduled tasks let the AI come to you
 
 ---
 
-## 和 ChatGPT / 文心一言 / 通义千问有什么区别？
+## What Do You Need?
 
-那些是 AI 模型，小龙虾是把 AI 模型接入你生活的平台。
+You need:
+- A computer with internet access (Windows, Mac, or Linux)
+- An API key for an AI model (OpenAI, Anthropic, Google Gemini, and many others — most offer free tiers)
+- About 30 minutes for setup (a guided wizard walks you through everything)
 
-打个比方：AI 模型是"大脑"，小龙虾是"身体"。大脑很聪明，但没有身体就只能待在网页里等你去找它。小龙虾给它一个身体，让它住进你的微信、飞书，主动帮你做事。
-
-你甚至可以在小龙虾里切换不同的 AI 大脑——今天用通义千问，明天换 ChatGPT，后天试试 Gemini，都可以。
+You don't need:
+- Programming experience
+- A powerful computer
+- To pay anything upfront (OpenClaw is free; many AI models offer free credits to get started)
 
 ---
 
-## 听起来不错，怎么开始？
+## How Is This Different From ChatGPT / Claude / Gemini?
 
-安装只需要一行命令，配置有安装助手全程指导你。整个过程大约 30 分钟。
+Those are AI models. OpenClaw is the platform that brings AI models into your daily life.
 
-如果你准备好了，告诉我你的操作系统（Windows、Mac 还是 Linux），我来带你一步步完成！
+Think of it this way: the AI model is the "brain," and OpenClaw is the "body." The brain is smart, but without a body it just sits on a website waiting for you to visit. OpenClaw gives it a body — it moves into your Telegram, Discord, or WhatsApp and proactively helps you.
+
+You can even swap brains — use OpenAI today, switch to Claude tomorrow, try Gemini the day after. All through the same interface.
+
+---
+
+## Sounds Good — How Do I Start?
+
+Installation takes just one command, and a setup wizard guides you through everything. The whole process takes about 30 minutes.
+
+If you're ready, tell me your operating system (Windows, Mac, or Linux) and I'll walk you through it step by step!

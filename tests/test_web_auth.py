@@ -49,7 +49,8 @@ async def test_register_duplicate_username():
         )
 
     assert resp.status_code == 409
-    assert "已被注册" in resp.json()["detail"]
+    # English default (no Accept-Language header)
+    assert "already taken" in resp.json()["detail"].lower() or "已被注册" in resp.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -155,7 +156,8 @@ async def test_login_wrong_password():
         )
 
     assert resp.status_code == 401
-    assert "密码错误" in resp.json()["detail"]
+    detail = resp.json()["detail"].lower()
+    assert "invalid" in detail or "密码错误" in resp.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -171,7 +173,8 @@ async def test_login_nonexistent_user():
         )
 
     assert resp.status_code == 401
-    assert "密码错误" in resp.json()["detail"]
+    detail = resp.json()["detail"].lower()
+    assert "invalid" in detail or "密码错误" in resp.json()["detail"]
 
 
 @pytest.mark.asyncio

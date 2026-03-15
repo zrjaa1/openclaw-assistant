@@ -30,7 +30,7 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     dify_conversation_id = Column(String(64), default="")
-    title = Column(String(200), default="OpenClaw 安装指导")
+    title = Column(String(200), default="OpenClaw Assistant")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="conversations")

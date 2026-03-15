@@ -44,6 +44,7 @@ function sendMessage(message, conversationId, onChunk, onDone, onError) {
     data: {
       message: message,
       conversation_id: conversationId,
+      client_type: 'miniprogram',
     },
     dataType: 'text',
     success(res) {

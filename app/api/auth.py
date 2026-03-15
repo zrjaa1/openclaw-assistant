@@ -22,7 +22,7 @@ class LoginResponse(BaseModel):
 def create_token(user_id: int) -> str:
     payload = {
         "user_id": user_id,
-        "exp": datetime.utcnow() + timedelta(days=30),
+        "exp": datetime.utcnow() + timedelta(hours=settings.jwt_expiry_hours),
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 

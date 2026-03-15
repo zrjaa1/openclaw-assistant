@@ -25,6 +25,9 @@ env/
 *.swp
 *.swo
 
+# Frontend config (generated at deploy time)
+web/config.js
+
 # OS
 .DS_Store
 Thumbs.db
@@ -33,5 +36,12 @@ Thumbs.db
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/
 
+# Local scripts
+scripts/
+
 # Private Keys
 private.*
+
+# Sensitive docs (credentials, internal URLs)
+TEST_ACCOUNTS.md
+docs/ENVIRONMENTS.md

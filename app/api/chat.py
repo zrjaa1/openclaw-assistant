@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.api.auth import verify_token
-from app.db.database import Conversation, Message, SessionLocal
+from app.db.database import Conversation, Message, SessionLocal, User
 from app.services import dify_service, quota_service
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ MAX_MESSAGE_LENGTH = 2000
 class ChatRequest(BaseModel):
     message: str
     conversation_id: int | None = None
+    client_type: str = "web"
 
 
 class MessageOut(BaseModel):
@@ -83,21 +84,34 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
                 detail="对话次数已用完，请充值后继续使用。",
             )
 
-        # Get or create conversation
+        # Get or create conversation — always reuse the latest for this user.
+        # 1. If client sends a conversation_id, try to use it
+        # 2. Otherwise (or if not found), fall back to user's latest conversation
+        # 3. Only create a new row if the user has zero conversations
+        conv = None
         if req.conversation_id:
             conv = db.query(Conversation).filter(
                 Conversation.id == req.conversation_id,
                 Conversation.user_id == user_id,
             ).first()
-            if not conv:
-                raise HTTPException(status_code=404, detail="Conversation not found")
-            dify_conv_id = conv.dify_conversation_id
-        else:
-            conv = Conversation(user_id=user_id)
+
+        if not conv:
+            conv = (
+                db.query(Conversation)
+                .filter(Conversation.user_id == user_id)
+                .order_by(Conversation.id.desc())
+                .first()
+            )
+
+        if not conv:
+            user = db.query(User).filter(User.id == user_id).first()
+            title = user.username or user.openid if user else str(user_id)
+            conv = Conversation(user_id=user_id, title=title)
             db.add(conv)
             db.commit()
             db.refresh(conv)
-            dify_conv_id = ""
+
+        dify_conv_id = conv.dify_conversation_id or ""
 
         # Save user message
         user_msg = Message(
@@ -115,18 +129,35 @@ async def chat(req: ChatRequest, authorization: str = Header(...)):
     async def event_stream():
         full_answer = ""
         dify_conv_id_from_stream = ""
+        dify_conv_id_saved = False  # track whether we've persisted it
 
         try:
             async for event in dify_service.send_message_stream(
                 query=req.message,
                 user_id=str(user_id),
                 conversation_id=dify_conv_id,
+                client_type=req.client_type,
             ):
                 event_type = event.get("event", "")
 
-                # Capture conversation_id from any event that has it
+                # Capture and eagerly persist dify_conversation_id
+                # so it survives even if the stream is interrupted.
                 if event.get("conversation_id"):
                     dify_conv_id_from_stream = event["conversation_id"]
+                    if not dify_conv_id_saved:
+                        try:
+                            eager_db = SessionLocal()
+                            conv_obj = eager_db.query(Conversation).filter(
+                                Conversation.id == conv_id_local
+                            ).first()
+                            if conv_obj and conv_obj.dify_conversation_id != dify_conv_id_from_stream:
+                                conv_obj.dify_conversation_id = dify_conv_id_from_stream
+                                eager_db.commit()
+                            dify_conv_id_saved = True
+                        except Exception:
+                            logger.exception("Failed to eagerly save dify_conversation_id")
+                        finally:
+                            eager_db.close()
 
                 if event_type == "message":
                     chunk = event.get("answer", "")
