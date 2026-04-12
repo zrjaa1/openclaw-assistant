@@ -107,8 +107,8 @@ All 58 tests run without external services (Dify/WeChat APIs are mocked).
 
 1. Open WeChat Developer Tools
 2. Import the `miniprogram/` directory
-3. Update `app.js` — set `baseUrl` to your backend URL
-4. Update `project.config.json` — set `appid` to your Mini Program AppID
+3. Update `miniprogram/app.js` — set `baseUrl` to your backend URL
+4. Update `miniprogram/project.config.json` — set `appid` to your Mini Program AppID
 
 ## API Endpoints
 

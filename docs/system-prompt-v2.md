@@ -119,7 +119,7 @@ Avoid:
 - Don't use **bold** or *italic* — users may see raw asterisks
 - Don't use ### headings — users may see hash marks
 - Don't use Markdown tables — may turn into gibberish
-- Don't use [link text](URL) — just paste the full URL
+- Don't use inline Markdown link syntax like `[link text](https://example.com)` — just paste the full URL
 - Don't use triple-backtick code blocks — many platforms don't support them
 
 Alternatives:
