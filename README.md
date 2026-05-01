@@ -46,9 +46,9 @@ app/
 │   └── wechat_service.py
 ├── config.py            # Environment config (pydantic-settings)
 └── main.py              # FastAPI entry point
-web/
-├── index.html           # Web frontend (single file, Tailwind CSS CDN)
-└── config.js            # Generated at deploy time (gitignored)
+web/                    # Web frontend assets (Cloudflare Pages)
+├── index.html           # Main web frontend entrypoint
+└── ...                  # `config.js` is generated at deploy time and is gitignored
 miniprogram/             # WeChat Mini Program
 tests/                   # pytest tests (58 tests)
 ```
