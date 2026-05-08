@@ -8,10 +8,10 @@ OpenClaw is an open-source tool that brings AI into everyday chat apps (WeChat, 
 
 **Start here for project work:**
 
-- **docs/ENVIRONMENTS.md** - Environment setup (local, experiment, production) + endpoints
-- **TEST_ACCOUNTS.md** - Test account credentials for development
+- **docs/openclaw-overview.md** / **docs/openclaw-总览.md** - Product overview docs (English / Chinese)
 - **docs/basic/** and **docs/installation/** - User-facing docs (bilingual zh/en)
-- **docs/system-prompt-v2.md** (English) / **docs/系统提示词-v2.md** (Chinese) - Dify system prompts
+- **docs/system-prompt-v2.md** / **docs/系统提示词-v2.md** - Dify system prompts (English / Chinese)
+- **tests/** - pytest coverage for auth, chat, quota, frontend language, and integrations
 
 ---
 
@@ -48,9 +48,9 @@ app/
 └── main.py              # FastAPI entry point
 web/                    # Web frontend assets (Cloudflare Pages)
 ├── index.html           # Main web frontend entrypoint
-└── ...                  # `config.js` is generated at deploy time and is gitignored
+└── ...                  # generated runtime config file is created at deploy time and is gitignored
 miniprogram/             # WeChat Mini Program
-tests/                   # pytest tests (58 tests)
+tests/                   # pytest test suite
 ```
 
 ## Quick Start
@@ -101,7 +101,7 @@ pip install -r requirements.txt -r requirements-test.txt
 python3 -m pytest tests/ -v
 ```
 
-All 58 tests run without external services (Dify/WeChat APIs are mocked).
+The pytest suite runs without external services (Dify/WeChat APIs are mocked).
 
 ### WeChat Mini Program
 
@@ -158,7 +158,7 @@ The `web/` directory is deployed as a static site on Cloudflare Pages.
 
 #### Notes
 
-- `web/config.js` is gitignored — it's generated at deploy time by the build command from the `BACKEND_API_URL` env var
+- The web runtime config file is gitignored and generated at deploy time from the `BACKEND_API_URL` env var
 - No build tooling required (plain HTML + Tailwind CSS CDN)
 - The frontend auto-detects the user's browser language (English/Chinese) and includes a manual toggle
 
