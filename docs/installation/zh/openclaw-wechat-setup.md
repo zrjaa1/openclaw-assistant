@@ -91,7 +91,7 @@ openclaw plugins install openclaw-wechat-channel
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：微信代理服务
 
 **Q：代理服务在哪里获取？**
 A：由于微信接入方案更新较快，建议查看插件的最新文档或在 [OpenClaw Discord 社区](https://discord.com/invite/clawd) 询问其他用户推荐的代理服务。
@@ -151,7 +151,7 @@ openclaw channels add
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：配置 OpenClaw
 
 **Q：`dmPolicy` 应该设成什么？**
 A：
@@ -213,7 +213,7 @@ openclaw logs --follow
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：启动并测试
 
 **Q：发消息后没有收到回复？**
 A：按顺序检查：

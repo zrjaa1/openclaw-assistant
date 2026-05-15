@@ -59,7 +59,7 @@ openclaw skills info weather
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：查看已有技能
 
 **Q：列表里的技能太多了，怎么只看已激活的？**
 A：运行 `openclaw skills list --eligible`，只显示已经满足条件、可以使用的技能。
@@ -97,7 +97,7 @@ openclaw plugins install <包名>
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：安装新技能
 
 **Q：`clawhub` 命令找不到？**
 A：ClawHub CLI 可能需要单独安装：
@@ -156,7 +156,7 @@ openclaw skills info <技能名称>
 
 ---
 
-### ❓ 常见问题
+### ❓ 常见问题：配置技能
 
 **Q：配置文件在哪里？**
 A：`~/.openclaw/openclaw.json`

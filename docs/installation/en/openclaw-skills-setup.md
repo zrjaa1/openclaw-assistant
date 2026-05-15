@@ -59,7 +59,7 @@ openclaw skills info weather
 
 ---
 
-### ❓ FAQ
+### ❓ FAQ: Viewing Installed Skills
 
 **Q: The skill list is huge — how do I see only active ones?**
 A: Run `openclaw skills list --eligible` to show only skills that are ready to use.
@@ -97,7 +97,7 @@ openclaw plugins install <package-name>
 
 ---
 
-### ❓ FAQ
+### ❓ FAQ: Installing New Skills
 
 **Q: `clawhub` command not found?**
 A: ClawHub CLI may need separate installation:
@@ -156,7 +156,7 @@ To turn off a skill:
 
 ---
 
-### ❓ FAQ
+### ❓ FAQ: Configuring Skills
 
 **Q: Where's the config file?**
 A: `~/.openclaw/openclaw.json`
