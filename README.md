@@ -9,7 +9,7 @@ OpenClaw is an open-source tool that brings AI into everyday chat apps (WeChat, 
 **Start here for project work:**
 
 - **docs/openclaw-overview.md** / **docs/openclaw-总览.md** - Product overview docs (English / Chinese)
-- **docs/basic/** and **docs/installation/** - User-facing docs (bilingual zh/en)
+- **docs/archive/openclaw-*.md** - Archived installation walkthroughs (Windows, macOS/Linux, initial setup)
 - **docs/system-prompt-v2.md** / **docs/系统提示词-v2.md** - Dify system prompts (English / Chinese)
 - **tests/** - pytest coverage for auth, chat, quota, frontend language, and integrations
 
